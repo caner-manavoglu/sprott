@@ -7,6 +7,7 @@ import { canMove, dateLabel, daysLate, fullName, isOverdue, isoDate, monthAgo, t
 import type { Attachment, Board, Task, TaskComment, User } from '../../lib/types';
 import { TaskTypeBadge, taskTypeOptions } from '../task-type';
 import { TaskPriorityBadge, taskPriorityOptions } from '../task-priority';
+import { PrStateBadge } from '../pull-request';
 import { apiBlob } from '../../api';
 
 type NewTaskProps = {
@@ -400,6 +401,10 @@ export function TaskDetailDialog({task, board, members, currentUser, busy, error
         </div>
         {!!children.length && <div className="subtask-list"><strong>Alt tasklar</strong>{children.map(child =>
           <div key={child.id}><TaskTypeBadge type={child.type}/><span>{taskCode(child.id)} · {child.title}</span></div>)}</div>}
+        {/* Bağlı PR'lar salt okunurdur; ekleme ve düzenleme PR ekranından yapılır. */}
+        {!!task.pullRequests.length && <div className="subtask-list"><strong>Bağlı PR’lar</strong>{task.pullRequests.map(pullRequest =>
+          <div key={pullRequest.id}><PrStateBadge state={pullRequest.state}/>
+            <a href={pullRequest.url} target="_blank" rel="noreferrer noopener">{pullRequest.title}</a></div>)}</div>}
       </div></div>
 
       <div className="reveal" data-open={editing}><div>{canUpdate && <form id="task-edit-form" key={`${task.id}-${editing}`} onSubmit={event => {

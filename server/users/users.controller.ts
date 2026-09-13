@@ -52,7 +52,9 @@ export class UsersController {
     const {name, surname, title, email} = this.profile(body), password = passwordField(body.password);
     await this.guard(() => this.store.db.query(
       'INSERT INTO users(name,surname,title,email,password,role,permissions) VALUES($1,$2,$3,$4,$5,$6,$7)',
-      [name, surname, title, email, hash(password), 'user', {'task.view': true}],
+      // PR yetkileri varsayılan olarak açıktır; yetkiler ekranından kısılabilir.
+      [name, surname, title, email, hash(password), 'user',
+        {'task.view': true, 'pr.view': true, 'pr.create': true, 'pr.update': true, 'pr.delete': true, 'pr.merge': true}],
     ));
     return this.list();
   }

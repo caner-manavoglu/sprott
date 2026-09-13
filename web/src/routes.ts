@@ -2,7 +2,7 @@ import type { Board } from './lib/types';
 import { idFromPath, segments } from './lib/router';
 
 /** Uygulamanın sayfaları; adres çubuğundaki yol ile birebir eşleşir. */
-export type PageKey = 'dashboard' | 'projects' | 'board' | 'permissions' | 'users' | 'groups' | 'reports' | 'notifications' | 'announcements' | 'logs';
+export type PageKey = 'dashboard' | 'projects' | 'board' | 'permissions' | 'users' | 'groups' | 'reports' | 'notifications' | 'announcements' | 'pullRequests' | 'logs';
 
 export const paths = {
   dashboard: '/dashboard',
@@ -19,6 +19,7 @@ export const paths = {
   announcements: '/duyurular',
   /** Duyuru okuma raporu; yalnızca duyuruyu yazan kişi ve yöneticiler açabilir. */
   announcementDetail: (announcementId: number) => `/duyurular/${announcementId}`,
+  pullRequests: '/pr',
   logs: '/loglar',
 } as const;
 
@@ -34,6 +35,7 @@ export const pageTitles: Record<PageKey, PageInfo> = {
   notifications: {crumb: 'Bildirimler', eyebrow: 'HABERLER', heading: 'Bildirimler', description: 'Size atanan task’lar, etiketlendiğiniz yorumlar ve tamamlanan işler burada toplanır.'},
   reports: {crumb: 'Raporlar', eyebrow: 'ÖLÇÜM', heading: 'Raporlar', description: 'Projelerin son sütununa taşınan, yani tamamlanan task sayıları.'},
   announcements: {crumb: 'Duyurular', eyebrow: 'HABERLEŞME', heading: 'Duyurular', description: 'Ekibe açık duyurular. Zorunlu duyurular okunana kadar girişte karşınıza çıkar.'},
+  pullRequests: {crumb: 'PR’lar', eyebrow: 'KOD İNCELEME', heading: 'Bekleyen PR’lar', description: 'Açık pull request’ler ve bağlı oldukları task’lar. En uzun bekleyen üstte.'},
   logs: {crumb: 'Loglar', eyebrow: 'DENETİM İZİ', heading: 'Etkinlik günlüğü', description: 'Kim, ne zaman task açtı, statü değiştirdi, yorum attı veya task sildi. Kayıtlar salt okunurdur.'},
 };
 
@@ -41,6 +43,7 @@ export const pageTitles: Record<PageKey, PageInfo> = {
 export const moduleLabels: Record<string, string> = {
   project: 'Proje modülü', task: 'Task modülü', user: 'Kullanıcı modülü', group: 'Grup modülü', report: 'Rapor modülü',
   log: 'Log modülü',
+  pr: 'PR modülü',
   announcement: 'Duyuru modülü',
   workflow: 'Akış modülü',
 };
@@ -68,6 +71,7 @@ export function matchRoute(path: string): Route {
     case 'yetkiler': return {page: 'permissions'};
     case 'kullanicilar': return {page: 'users'};
     case 'gruplar': return {page: 'groups'};
+    case 'pr': return {page: 'pullRequests'};
     case 'loglar': return {page: 'logs'};
     case 'bildirimler': return {page: 'notifications'};
     case 'duyurular': return {page: 'announcements', announcementId: idFromPath(path, 'duyurular')};

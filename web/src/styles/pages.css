@@ -1,4 +1,11 @@
 /* Sayfa gövdeleri: özet kartları, tablolar, boş durum panelleri. */
+.mcp-setup { display: grid; gap: 16px; font-size: 12px; line-height: 1.6; }
+.mcp-setup { max-height: 70vh; overflow-y: auto; padding-right: 5px; }
+.mcp-connections { display: grid; gap: 10px; }
+.mcp-connections li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--input); border-radius: 8px; }
+.mcp-connections small { display: block; color: var(--muted-foreground); }
+.mcp-setup ol { list-style: decimal; padding-left: 20px; }
+.mcp-setup textarea { width: 100%; border: 1px solid var(--input); border-radius: 8px; padding: 12px; background: var(--surface); font: 11px/1.5 monospace; }
 
 /* Özet: bağımlılık gerektirmeyen KPI, halka ve ilerleme grafikleri. */
 .dashboard { display: grid; gap: 22px; }
@@ -594,3 +601,93 @@ td {
 
 /* Zorunlu duyuru modalı yalnızca okundu işaretlenerek kapanır; kapatma düğmesi gizlenir. */
 .announcement-popup > button[aria-label="Kapat"] { display: none; }
+
+/* ---- Bekleyen PR'lar ---- */
+.pr-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--input);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pr-state[data-state="open"] { border-color: var(--critical-border); background: var(--critical-soft); color: var(--critical); }
+.pr-state[data-state="merged"] { border-color: var(--primary); color: var(--primary); }
+.pr-state[data-state="closed"] { color: var(--muted-foreground); }
+
+.pr-list { display: grid; gap: 10px; padding: 14px 20px; }
+
+.pr-card {
+  display: grid;
+  gap: 9px;
+  padding: 14px 16px;
+  border: 1px solid var(--input);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: var(--background);
+}
+
+.pr-card[data-state="open"] { border-left-color: var(--critical-border); }
+.pr-card[data-state="merged"] { border-left-color: var(--primary); }
+.pr-card[data-state="closed"] { opacity: .72; }
+
+.pr-card > header { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.pr-title { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: inherit; text-decoration: none; }
+.pr-title:hover { text-decoration: underline; }
+.pr-waiting { margin-left: auto; font-size: 10px; color: var(--muted-foreground); }
+.pr-description { margin: 0; font-size: 12px; line-height: 1.7; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.pr-tasks { display: flex; flex-wrap: wrap; gap: 6px; }
+.pr-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid var(--input);
+  border-radius: 7px;
+  background: var(--surface);
+  color: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+.pr-task:hover { border-color: var(--primary); }
+.pr-task small { color: var(--muted-foreground); }
+
+.pr-card > footer { display: flex; align-items: center; gap: 10px; font-size: 10px; color: var(--muted-foreground); }
+.pr-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* PR diyaloğundaki task seçici. */
+.pr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+.pr-task-search { display: flex; align-items: center; gap: 7px; color: var(--muted-foreground); }
+.pr-task-list { display: grid; gap: 3px; max-height: 190px; overflow-y: auto; margin-top: 7px; }
+.pr-task-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  color: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+.pr-task-list button:hover { background: var(--accent); }
+.pr-task-list button.active { border-color: var(--primary); color: var(--primary); font-weight: 600; }
+
+/* Taşıma uyarısı. */
+.pr-warning { display: grid; gap: 11px; }
+.pr-warning-lead { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 13px; line-height: 1.7; }
+.pr-warning-lead > svg { flex-shrink: 0; margin-top: 2px; color: var(--critical); }
+.pr-warning-list { display: grid; gap: 7px; padding: 11px; border-radius: 9px; background: var(--surface); }
+.pr-warning-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.pr-warning-row > a { display: inline-flex; align-items: center; gap: 5px; color: inherit; overflow-wrap: anywhere; }
+.pr-warning-row > a:hover { text-decoration: underline; }
+.pr-warning-row > button { margin-left: auto; flex-shrink: 0; }
+.log-action.pr { border-color: var(--critical-border); color: var(--critical); }

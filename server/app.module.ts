@@ -13,6 +13,8 @@ import { NotificationsModule } from './notifications/notifications.module.ts';
 import { WorkflowModule } from './workflow/workflow.module.ts';
 import { LogsModule } from './logs/logs.module.ts';
 import { AnnouncementsModule } from './announcements/announcements.module.ts';
+import { PullRequestsModule } from './pull-requests/pull-requests.module.ts';
+import { McpModule } from './mcp/mcp.controller.ts';
 
-@Module({imports: [StoreModule, AuthModule, BoardModule, TasksModule, PermissionsModule, UsersModule, GroupsModule, ProjectsModule, DashboardModule, ReportsModule, NotificationsModule, WorkflowModule, LogsModule, AnnouncementsModule]})
+@Module({imports: [StoreModule, AuthModule, BoardModule, TasksModule, PermissionsModule, UsersModule, GroupsModule, ProjectsModule, DashboardModule, ReportsModule, NotificationsModule, WorkflowModule, LogsModule, AnnouncementsModule, PullRequestsModule, McpModule]})
 export class AppModule {}

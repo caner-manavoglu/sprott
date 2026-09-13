@@ -36,6 +36,7 @@ npm run dev
 | Yetkiler | Modül bazlı yetkiler; her istekte sunucuda kontrol edilir |
 | Bildirimler | Atama, tamamlanma, yorum, etiketlenme ve duyuru bildirimleri |
 | Duyurular | Görselli duyurular, grup bazlı hedefleme, okundu takibi; zorunlu duyurular okunana kadar girişte gösterilir |
+| PR’lar | Pull request kaydı, çok task’a bağlama, onaylandı işaretleme; tamamlandıya taşımada açık PR uyarısı |
 | Raporlar | Kişi ve proje bazlı atanan / tamamlanan / bug / geciken sayıları |
 | Günlük | Salt okunur etkinlik günlüğü: task açma, statü ve atama değişimi, yorum, silme |
 

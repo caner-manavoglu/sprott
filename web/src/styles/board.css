@@ -584,3 +584,15 @@
 @media (max-width: 900px) {
   .priority-chip { font-size: 0; padding: 5px; gap: 0; }
 }
+
+/* Kartta açık PR sayısı; yalnızca bekleyenler sayılır. */
+.task-prs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  background: var(--critical-soft);
+  color: var(--critical);
+  font-size: 10px;
+  font-weight: 600;
+}

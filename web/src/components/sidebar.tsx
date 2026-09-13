@@ -1,12 +1,15 @@
-import { BarChart3, Bell, Boxes, ChevronDown, FolderKanban, Home, LogOut, Megaphone, ScrollText, ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, Bell, Boxes, ChevronDown, FolderKanban, GitPullRequest, Home, LogOut, Megaphone, ScrollText, ShieldCheck, Users } from 'lucide-react';
 import { Button } from './ui';
+import { useState } from 'react';
+import { Plug } from 'lucide-react';
+import { McpDialog } from './dialogs/mcp-dialog';
 import { Brand } from './brand';
 import { navigate, paths } from '../routes';
 import type { PageKey } from '../routes';
 import { fullName, roleLabel } from '../lib/format';
 import type { Board, Project, User } from '../lib/types';
 
-type Permissions = {projects: boolean; users: boolean; groups: boolean; logs: boolean; admin: boolean};
+type Permissions = {projects: boolean; users: boolean; groups: boolean; logs: boolean; prs: boolean; admin: boolean};
 
 type Props = {
   open: boolean;
@@ -25,10 +28,11 @@ type Props = {
 
 /** Sol gezinme: sayfa bağlantıları ve açılır proje listesi. */
 export function Sidebar({open, user, page, board, projects, can, unread, busy, projectsOpen, onToggleProjects, onLogout}: Props) {
+  const [mcpOpen, setMcpOpen] = useState(false);
   const link = (target: PageKey, path: string, icon: React.ReactNode, label: string) =>
     <button className={page === target ? 'active' : ''} onClick={() => navigate(path)}>{icon} {label}</button>;
 
-  return <aside id="sidebar" className="sidebar" aria-hidden={!open} inert={!open}>
+  return <><aside id="sidebar" className="sidebar" aria-hidden={!open} inert={!open}>
     <Brand/>
     <div className="workspace">
       <div className="workspace-icon">Ç</div>
@@ -67,16 +71,18 @@ export function Sidebar({open, user, page, board, projects, can, unread, busy, p
       {can.groups && link('groups', paths.groups, <Boxes size={18}/>, 'Gruplar')}
       {link('reports', paths.reports, <BarChart3 size={18}/>, 'Raporlar')}
       {link('announcements', paths.announcements, <Megaphone size={18}/>, 'Duyurular')}
+      {can.prs && link('pullRequests', paths.pullRequests, <GitPullRequest size={18}/>, 'PR’lar')}
       {can.logs && link('logs', paths.logs, <ScrollText size={18}/>, 'Loglar')}
       <button className={page === 'notifications' ? 'active' : ''} onClick={() => navigate(paths.notifications)}>
         <Bell size={18}/> Bildirimler
         {!!unread && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
       </button>
+      <button type="button" aria-label="MCP bağlantısı" title="MCP bağlantısı" aria-haspopup="dialog" aria-expanded={mcpOpen} onClick={() => setMcpOpen(true)}><Plug size={18}/> MCP bağlantısı</button>
     </nav>
     <div className="sidebar-bottom">
       <div className="user-avatar">{user.name[0]}</div>
       <div className="user-info"><strong>{fullName(user)}</strong><small>{user.title || roleLabel(user.role)}</small></div>
       <Button variant="ghost" size="icon" aria-label="Çıkış yap" disabled={busy} onClick={onLogout}><LogOut size={17}/></Button>
     </div>
-  </aside>;
+  </aside>{mcpOpen && <McpDialog onClose={() => setMcpOpen(false)}/>}</>;
 }

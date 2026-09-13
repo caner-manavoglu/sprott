@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   'project.view', 'project.create', 'project.update', 'project.delete',
   'report.view.all', 'report.view.group',
   'workflow.view', 'workflow.create', 'workflow.update', 'workflow.delete',
+  'pr.view', 'pr.create', 'pr.update', 'pr.delete', 'pr.merge',
   'log.view',
   'announcement.create',
 ] as const;
@@ -122,6 +123,12 @@ export class Store implements OnModuleInit, OnModuleDestroy {
             COALESCE((SELECT json_agg(json_build_object(
               'id', a.id, 'name', a.name, 'mimeType', a."mimeType", 'size', a.size
             ) ORDER BY a.id) FROM task_attachments a WHERE a."taskId"=t.id), '[]') AS attachments,
+            -- Karttaki "açık PR" rozeti ve task detayındaki liste aynı veriden beslenir.
+            COALESCE((SELECT json_agg(json_build_object(
+              'id', pr.id, 'url', pr.url, 'title', pr.title, 'state', pr.state
+            ) ORDER BY pr.state, pr.id) FROM pull_requests pr
+              JOIN pull_request_tasks prt ON prt."pullRequestId"=pr.id
+              WHERE prt."taskId"=t.id), '[]') AS "pullRequests",
             COALESCE((SELECT json_agg(json_build_object(
               'id', cm.id, 'body', cm.body, 'authorId', cm."authorId",
               'authorName', NULLIF(TRIM(CONCAT_WS(' ', author.name, author.surname)), ''),
@@ -316,7 +323,8 @@ export class Store implements OnModuleInit, OnModuleDestroy {
    */
   async log(entry: {
     projectId: number; taskId: number | null; taskTitle: string;
-    action: 'task.create' | 'task.move' | 'task.assign' | 'task.delete' | 'comment.create';
+    action: 'task.create' | 'task.move' | 'task.assign' | 'task.delete' | 'comment.create'
+      | 'pr.link' | 'pr.unlink' | 'pr.merge';
     detail?: string | null; actor: User;
   }) {
     await this.db.query(

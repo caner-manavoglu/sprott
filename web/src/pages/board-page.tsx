@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { AlertTriangle, CalendarClock, Columns3, GripVertical, LayoutDashboard, Lock, Plus } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Columns3, GitPullRequest, GripVertical, LayoutDashboard, Lock, Plus } from 'lucide-react';
 import { TaskTypeBadge } from '../components/task-type';
 import { Button } from '../components/ui';
 import { PeopleFilter } from '../components/people-filter';
@@ -128,6 +128,7 @@ export function BoardPage({board, members, busy, locked, canCreate, canUpdate, i
                 const assignee = members.find(person => person.id === task.assigneeId);
                 // Süresi geçen task kırmızı çerçeveyle işaretlenir; son sütundaki task tamamlanmış sayılır.
                 const late = isOverdue(task, board.columns);
+                const openPrCount = task.pullRequests.filter(pullRequest => pullRequest.state === 'open').length;
                 return <button key={task.id}
                   className={`task-card ${late ? 'overdue' : ''} ${task.priority === 'highest' ? 'critical' : ''} ${draggedTask === task.id ? 'is-dragging' : ''} ${landedTask === task.id ? 'just-moved' : ''}`}
                   draggable={!busy && canUpdate}
@@ -150,6 +151,10 @@ export function BoardPage({board, members, busy, locked, canCreate, canUpdate, i
                   <div className="card-footer">
                     <TaskTypeBadge type={task.type}/>
                     <TaskPriorityBadge priority={task.priority}/>
+                    {/* Yalnızca bekleyen PR'lar sayılır; onaylananlar rozeti düşürür. */}
+                    {openPrCount > 0 && <span className="task-prs" title={`${openPrCount} açık pull request`}>
+                      <GitPullRequest size={12}/>{openPrCount}
+                    </span>}
                     {assignee && <span className="task-assignee"><span className="assignee-avatar">{initials(assignee)}</span>{fullName(assignee)}</span>}
                   </div>
                 </button>;

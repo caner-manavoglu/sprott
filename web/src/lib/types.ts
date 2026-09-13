@@ -38,6 +38,39 @@ export type Project = {
 export type Column = {id: number; name: string};
 
 export type Attachment = {id: number; name: string; mimeType: string; size: number};
+
+/** PR durumu: bekliyor / onaylandı / merge edilmeden kapatıldı. */
+export type PrState = 'open' | 'merged' | 'closed';
+
+/** Task kartında ve detayında görünen sade PR kaydı. */
+export type TaskPullRequest = {id: number; url: string; title: string; state: PrState};
+
+export type PullRequest = {
+  id: number;
+  projectId: number;
+  projectName: string;
+  url: string;
+  title: string;
+  description: string;
+  state: PrState;
+  mergedAt: string | null;
+  mergedByName: string | null;
+  createdByName: string | null;
+  createdAt: string;
+  /** Eklendiğinden bu yana geçen gün; listede "kaç gündür bekliyor" için. */
+  waitingDays: number;
+  tasks: {id: number; title: string; columnName: string}[];
+};
+
+/** PR ekranının yanıtı: projeler, seçili proje, bağlanabilir task'lar ve kayıtlar. */
+export type PullRequestFeed = {
+  projects: {id: number; name: string}[];
+  projectId: number | null;
+  tasks: {id: number; title: string}[];
+  rows: PullRequest[];
+};
+
+export const emptyPullRequests: PullRequestFeed = {projects: [], projectId: null, tasks: [], rows: []};
 export type TaskComment = {
   id: number;
   body: string;
@@ -67,6 +100,8 @@ export type Task = {
   dueDate: string | null;
   attachments: Attachment[];
   comments: TaskComment[];
+  /** Task'a bağlı PR'lar; `open` olanlar kartta rozetle çıkar ve taşımada uyarı verir. */
+  pullRequests: TaskPullRequest[];
 };
 
 /** Üst çubuktaki aramanın döndürdüğü sade task kaydı. */
@@ -183,7 +218,8 @@ export type NotificationFeed = {items: Notification[]; unread: number};
 export const emptyFeed: NotificationFeed = {items: [], unread: 0};
 
 /** Etkinlik günlüğü kaydının türü. */
-export type LogAction = 'task.create' | 'task.move' | 'task.assign' | 'task.delete' | 'comment.create';
+export type LogAction = 'task.create' | 'task.move' | 'task.assign' | 'task.delete' | 'comment.create'
+  | 'pr.link' | 'pr.unlink' | 'pr.merge';
 
 export type LogRow = {
   id: number;

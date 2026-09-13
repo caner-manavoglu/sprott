@@ -23,6 +23,11 @@ export const boardSchema: SchemaObject = {
       attachments: {type: 'array', items: {type: 'object', properties: {
         id, name: {type: 'string'}, mimeType: {type: 'string'}, size: {type: 'integer'},
       }}},
+      pullRequests: {type: 'array', description: 'Task’a bağlı PR’lar; `open` olanlar kartta rozetle gösterilir.',
+        items: {type: 'object', properties: {
+          id: {type: 'integer'}, url: {type: 'string'}, title: {type: 'string'},
+          state: {type: 'string', enum: ['open', 'merged', 'closed']},
+        }}},
     }}},
   },
 };

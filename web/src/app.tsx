@@ -11,6 +11,9 @@ import { Button } from './components/ui';
 import { ColumnsDialog } from './components/dialogs/columns-dialog';
 import { GroupDialog, type GroupDraft } from './components/dialogs/group-dialog';
 import { NewTaskDialog, TaskDetailDialog } from './components/dialogs/task-dialog';
+import { PullRequestsPage } from './pages/pull-requests-page';
+import { PullRequestDialog, type PullRequestDraft } from './components/dialogs/pull-request-dialog';
+import { PrWarningDialog } from './components/dialogs/pr-warning-dialog';
 import { PermissionsDialog } from './components/dialogs/permissions-dialog';
 import { WorkflowDialog } from './components/dialogs/workflow-dialog';
 import { ProjectDialog, ProjectMembersDialog, type ProjectDraft } from './components/dialogs/project-dialogs';
@@ -29,8 +32,8 @@ import { AnnouncementReportPage, AnnouncementsPage } from './pages/announcements
 import { AnnouncementDialog, type AnnouncementDraft } from './components/dialogs/announcement-dialog';
 import { allowed, roleLabel } from './lib/format';
 import { useAsync } from './lib/use-async';
-import { emptyBoard, emptyFeed } from './lib/types';
-import type { ActivityLog, Announcement, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, OverdueTask, Project, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
+import { emptyBoard, emptyPullRequests, emptyFeed } from './lib/types';
+import type { ActivityLog, Announcement, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
 import { headingFor, matchRoute, navigate, pageTitles, paths, usePath } from './routes';
 
 export function App() {
@@ -74,6 +77,10 @@ export function App() {
   const [mandatory, setMandatory] = useState<Announcement[]>([]);
 
   // Açık modallar.
+  const [pullRequests, setPullRequests] = useState<PullRequestFeed>(emptyPullRequests);
+  const [pullRequestDraft, setPullRequestDraft] = useState<PullRequestDraft | null>(null);
+  /** Tamamlandı sütununa taşınırken açık PR uyarısı; onaylanırsa taşıma yapılır. */
+  const [prWarning, setPrWarning] = useState<{taskId: number; columnId: number} | null>(null);
   const [taskDraft, setTaskDraft] = useState<number | null>(null);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -104,6 +111,9 @@ export function App() {
     viewUsers: allowed(user, 'user.view'), createUser: allowed(user, 'user.create'),
     updateUser: allowed(user, 'user.update'), deleteUser: allowed(user, 'user.delete'),
     viewLogs: allowed(user, 'log.view'),
+    viewPrs: allowed(user, 'pr.view'),
+    createPr: allowed(user, 'pr.create'), updatePr: allowed(user, 'pr.update'),
+    deletePr: allowed(user, 'pr.delete'), mergePr: allowed(user, 'pr.merge'),
     // Duyuru yetkisi grup yöneticiliğinden türer; sunucu da aynı kuralı uygular.
     createAnnouncement: user?.role === 'admin' || (allowed(user, 'announcement.create') && !!user?.managedGroups?.length),
     viewGroups: allowed(user, 'group.view'), createGroup: allowed(user, 'group.create'),
@@ -223,6 +233,10 @@ export function App() {
         case 'notifications':
           setFeed(await api<NotificationFeed>('notifications'));
           break;
+        case 'pullRequests':
+          // Sunucu erişilebilen ilk projeyi seçer; filtre burada sıfırlanmaz.
+          setPullRequests(await api<PullRequestFeed>('pull-requests'));
+          break;
         case 'announcements':
           if (route.announcementId === null) setAnnouncements(await api<Announcement[]>('announcements'));
           else setAnnouncementReport(await api<AnnouncementDetail>(`announcements/${route.announcementId}`));
@@ -323,6 +337,36 @@ export function App() {
     navigate(paths.boardTask(item.projectId!, item.taskId!));
   });
 
+  /** Son sütun "tamamlandı" sayılır; gecikme ve rapor tanımıyla aynı kural. */
+  const isFinalColumn = (columnId: number) => board.columns[board.columns.length - 1]?.id === columnId;
+
+  const moveTask = (taskId: number, columnId: number) => void run(async () => {
+    setBoard(await api<Board>(`tasks/${taskId}`, 'PATCH', {columnId}));
+    setOpenTask(null);
+    setPrWarning(null);
+  });
+
+  /**
+   * Taşıma kapısı: task tamamlandı sütununa gidiyorsa ve açık PR'ı varsa önce uyarı çıkar.
+   * Engelleme yoktur; kullanıcı onaylarsa taşınır ve sunucu günlüğe "açık PR" notunu düşer.
+   */
+  const requestMove = (taskId: number, columnId: number) => {
+    const task = board.tasks.find(item => item.id === taskId);
+    const openPrs = task?.pullRequests.filter(pullRequest => pullRequest.state === 'open') ?? [];
+    if (openPrs.length && isFinalColumn(columnId) && task!.columnId !== columnId) {
+      setError('');
+      setPrWarning({taskId, columnId});
+      return;
+    }
+    moveTask(taskId, columnId);
+  };
+
+  /** PR ekranının verisini tazeler; pano açıksa kartlardaki rozet de güncellenir. */
+  const reloadPullRequests = async (feed: PullRequestFeed) => {
+    setPullRequests(feed);
+    if (route.page === 'board') setBoard(await api<Board>(`projects/${route.projectId}/board`));
+  };
+
   const reloadBoard = async () => {
     if (route.page === 'board') setBoard(await api<Board>(`projects/${route.projectId}/board`));
   };
@@ -348,7 +392,7 @@ export function App() {
 
   return <div className={`app-shell${sidebarOpen ? '' : ' sidebar-closed'}`}>
     <Sidebar open={sidebarOpen} user={user} page={route.page} board={board} projects={projects} busy={busy} projectsOpen={projectsOpen} unread={feed.unread}
-      can={{projects: can.viewProjects, users: can.viewUsers, groups: can.viewGroups, logs: can.viewLogs, admin: !!isAdmin}}
+      can={{projects: can.viewProjects, users: can.viewUsers, groups: can.viewGroups, logs: can.viewLogs, prs: can.viewPrs, admin: !!isAdmin}}
       onToggleProjects={() => setProjectsOpen(open => !open)}
       onLogout={() => void run(async () => {
         await api('logout', 'POST');
@@ -444,10 +488,7 @@ export function App() {
         canCreate={can.createTask} canUpdate={can.updateTask} isAdmin={!!isAdmin}
         onAddTask={columnId => {setError(''); setTaskDraft(columnId);}}
         onOpenTask={task => {setError(''); setOpenTask(task);}}
-        onMove={(taskId, columnId) => void run(async () => {
-          setBoard(await api<Board>(`tasks/${taskId}`, 'PATCH', {columnId}));
-          setOpenTask(null);
-        })}/>}
+        onMove={requestMove}/>}
 
       {route.page === 'permissions' && <PermissionsPage people={people} definitions={definitions} busy={busy}
         onEdit={person => {setError(''); setPermissionPerson(person);}}/>}
@@ -472,6 +513,24 @@ export function App() {
           confirmLabel: 'sil', destructive: true,
           action: () => run(async () => setGroups(await api<Group[]>(`groups/${group.id}`, 'DELETE'))),
         })}/>}
+
+      {route.page === 'pullRequests' && <div className="page-body">
+        <PullRequestsPage feed={pullRequests} busy={busy}
+          canCreate={can.createPr} canUpdate={can.updatePr} canDelete={can.deletePr} canMerge={can.mergePr}
+          onProject={projectId => void run(async () =>
+            setPullRequests(await api<PullRequestFeed>(`pull-requests?projectId=${projectId}`)))}
+          onNew={() => {setError(''); setPullRequestDraft('new');}}
+          onEdit={pullRequest => {setError(''); setPullRequestDraft(pullRequest);}}
+          onState={(pullRequest, state) => void run(async () =>
+            reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}/state`, 'PATCH', {state})))}
+          onDelete={pullRequest => setConfirmation({
+            title: 'PR silinsin mi?',
+            description: `“${pullRequest.title}” kaydı ve task bağları silinecek. Pull request’in kendisi GitHub’da kalır.`,
+            confirmLabel: 'sil', destructive: true,
+            action: () => run(async () =>
+              reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}`, 'DELETE'))),
+          })}/>
+      </div>}
 
       {route.page === 'logs' && <div className="page-body">
         <LogsPage log={log} busy={busy} taskId={logTask}
@@ -526,6 +585,27 @@ export function App() {
         : <ReportsPage report={report} busy={busy} onOpenPerson={id => navigate(paths.reportDetail(id))}/>)}
     </main>
 
+    <PullRequestDialog draft={pullRequestDraft} tasks={pullRequests.tasks} busy={busy} error={error}
+      onClose={() => setPullRequestDraft(null)}
+      onSubmit={(values, editing) => void run(async () => {
+        const payload = {...values, projectId: pullRequests.projectId};
+        setPullRequests(editing
+          ? await api<PullRequestFeed>(`pull-requests/${editing.id}`, 'PATCH', values)
+          : await api<PullRequestFeed>('pull-requests', 'POST', payload));
+        setPullRequestDraft(null);
+      })}/>
+
+    <PrWarningDialog task={prWarning ? board.tasks.find(item => item.id === prWarning.taskId) ?? null : null}
+      columnName={board.columns.find(column => column.id === prWarning?.columnId)?.name ?? ''}
+      busy={busy} error={error} canMerge={can.mergePr}
+      onMerge={pullRequestId => void run(async () => {
+        await api<PullRequestFeed>(`pull-requests/${pullRequestId}/state`, 'PATCH', {state: 'merged'});
+        // Pano tazelenince uyarı listesi küçülür; son PR onaylanınca modal kendiliğinden kapanır.
+        if (board.project) setBoard(await api<Board>(`projects/${board.project.id}/board`));
+      })}
+      onConfirm={() => prWarning && moveTask(prWarning.taskId, prWarning.columnId)}
+      onCancel={() => setPrWarning(null)}/>
+
     <NewTaskDialog open={taskDraft !== null} board={board} members={members} columnId={taskDraft ?? 0} busy={busy} error={error}
       onClose={() => setTaskDraft(null)}
       onSubmit={(values, files) => void run(async () => {
@@ -546,10 +626,7 @@ export function App() {
         setBoard(next);
         setOpenTask(next.tasks.find(item => item.id === openTask!.id) ?? null);
       })}
-      onMove={columnId => void run(async () => {
-        setBoard(await api<Board>(`tasks/${openTask!.id}`, 'PATCH', {columnId}));
-        setOpenTask(null);
-      })}
+      onMove={columnId => requestMove(openTask!.id, columnId)}
       onDelete={() => void run(async () => {
         setBoard(await api<Board>(`tasks/${openTask!.id}`, 'DELETE'));
         setOpenTask(null);

@@ -20,6 +20,8 @@ export const permissionLabels: Record<Permission, string> = {
   'report.view.all': 'Tüm raporları görüntüleme', 'report.view.group': 'Grubumun raporunu görüntüleme',
   'log.view': 'Log görüntüleme',
   'announcement.create': 'Duyuru oluşturma',
+  'pr.view': 'PR görüntüleme', 'pr.create': 'PR ekleme', 'pr.update': 'PR düzenleme',
+  'pr.delete': 'PR silme', 'pr.merge': 'PR’ı onaylandı işaretleme',
   'workflow.view': 'Akış kurallarını görüntüleme', 'workflow.create': 'Akış kuralı tanımlama',
   'workflow.update': 'Akış kuralı düzenleme', 'workflow.delete': 'Akış kuralını kaldırma',
 };

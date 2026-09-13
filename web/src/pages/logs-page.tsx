@@ -1,4 +1,4 @@
-import { ArrowRight, MessageSquare, Plus, ScrollText, Trash2, UserPlus } from 'lucide-react';
+import { ArrowRight, Check, GitPullRequest, MessageSquare, Plus, ScrollText, Trash2, Unlink, UserPlus } from 'lucide-react';
 import { Select } from '../components/ui';
 import type { ActivityLog, LogAction } from '../lib/types';
 
@@ -11,6 +11,9 @@ const actions: Record<LogAction, {label: string; icon: React.ReactNode; tone: st
   'task.assign': {label: 'Atama değiştirdi', icon: <UserPlus size={13}/>, tone: 'assign'},
   'task.delete': {label: 'Task sildi', icon: <Trash2 size={13}/>, tone: 'delete'},
   'comment.create': {label: 'Yorum attı', icon: <MessageSquare size={13}/>, tone: 'comment'},
+  'pr.link': {label: 'PR bağladı', icon: <GitPullRequest size={13}/>, tone: 'pr'},
+  'pr.unlink': {label: 'PR bağını kaldırdı', icon: <Unlink size={13}/>, tone: 'pr'},
+  'pr.merge': {label: 'PR onayladı', icon: <Check size={13}/>, tone: 'create'},
 };
 
 type Props = {

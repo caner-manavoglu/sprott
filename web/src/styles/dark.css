@@ -210,3 +210,10 @@
   background: var(--critical-soft);
   color: var(--critical);
 }
+
+/* PR rozetleri koyu temada kendi zeminlerini korur. */
+:root[data-theme="dark"] .task-prs { background: var(--critical-soft); color: var(--critical); }
+:root[data-theme="dark"] .pr-card { background: var(--surface); }
+:root[data-theme="dark"] .pr-task { background: var(--subtle); }
+:root[data-theme="dark"] .pr-warning-list { background: var(--subtle); }
+:root[data-theme="dark"] .log-action.pr { border-color: var(--critical-border); color: var(--critical); }
