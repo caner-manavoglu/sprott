@@ -34,7 +34,8 @@ npm run dev
 | Akış | Proje bazlı sütun geçiş kuralları; kural yoksa tüm geçişler serbest |
 | Kullanıcı & Grup | Hesap yönetimi, gruplar, grup yöneticileri |
 | Yetkiler | Modül bazlı yetkiler; her istekte sunucuda kontrol edilir |
-| Bildirimler | Atama, tamamlanma, yorum ve etiketlenme bildirimleri |
+| Bildirimler | Atama, tamamlanma, yorum, etiketlenme ve duyuru bildirimleri |
+| Duyurular | Görselli duyurular, grup bazlı hedefleme, okundu takibi; zorunlu duyurular okunana kadar girişte gösterilir |
 | Raporlar | Kişi ve proje bazlı atanan / tamamlanan / bug / geciken sayıları |
 | Günlük | Salt okunur etkinlik günlüğü: task açma, statü ve atama değişimi, yorum, silme |
 
