@@ -9,6 +9,7 @@ import { TaskTypeBadge, taskTypeOptions } from '../task-type';
 import { TaskPriorityBadge, taskPriorityOptions } from '../task-priority';
 import { PrStateBadge } from '../pull-request';
 import { apiBlob } from '../../api';
+import { toast } from '../../lib/toast';
 
 type NewTaskProps = {
   open: boolean;
@@ -94,8 +95,9 @@ async function downloadAttachment(path: string, attachment: Attachment) {
     link.href = url;
     link.download = attachment.name;
     link.click();
+    toast('Dosya indirmesi başlatıldı.');
     setTimeout(() => URL.revokeObjectURL(url), 0);
-  } catch (error) { alert((error as Error).message); }
+  } catch (error) { toast((error as Error).message, 'error'); }
 }
 
 function AttachmentPreview({path, attachment, onClose}: {path: string; attachment: Attachment; onClose: () => void}) {

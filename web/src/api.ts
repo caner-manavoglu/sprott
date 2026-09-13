@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { actionMessage, toast } from './lib/toast';
 
 export let authToken = '';
 try { authToken = localStorage.getItem('sprott-token') || ''; } catch { /* Storage may be unavailable. */ }
@@ -13,6 +14,8 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
       headers: authToken ? {Authorization: `Bearer ${authToken}`} : {},
       responseType: 'json', transitional: {silentJSONParsing: false},
     });
+    const message = actionMessage(path, method.toUpperCase(), body);
+    if (message) toast(message);
     return data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {

@@ -1,0 +1,11 @@
+.toast-region { position: fixed; z-index: 10000; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); width: min(390px, calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 14px 12px 14px 16px; border: 1px solid var(--input); border-radius: 14px; background: var(--surface); color: var(--foreground); box-shadow: 0 8px 32px #0002; pointer-events: auto; animation: toast-enter 180ms ease-out; }
+.toast > svg { flex-shrink: 0; color: var(--green, var(--primary)); }
+.toast--error > svg { color: var(--late); }
+.toast p { flex: 1; margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.toast button { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.toast button:hover { background: var(--accent); color: var(--foreground); }
+.toast button:focus-visible { outline: 2px solid var(--green, var(--primary)); outline-offset: 2px; }
+@keyframes toast-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+@media (max-width: 600px) { .toast-region { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); } }

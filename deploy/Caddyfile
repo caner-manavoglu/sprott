@@ -1,0 +1,4 @@
+# Caddy aynı sunucuda çalışır; DNS sprott.dev kaydı bu sunucuyu göstermelidir.
+sprott.dev {
+    reverse_proxy 127.0.0.1:3000
+}

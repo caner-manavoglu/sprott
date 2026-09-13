@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from './toast';
 
 /**
  * Sunucu çağrılarının ortak kabuğu: çalışırken `busy`, hata olursa `error`.
@@ -15,7 +16,9 @@ export function useAsync() {
       await action();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bağlantı kurulamadı.');
+      const message = err instanceof Error ? err.message : 'Bağlantı kurulamadı.';
+      setError(message);
+      toast(message, 'error');
       return false;
     } finally {
       setBusy(false);

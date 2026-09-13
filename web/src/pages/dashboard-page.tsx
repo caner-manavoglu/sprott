@@ -1,7 +1,10 @@
-import { AlertTriangle, ArrowRight, CheckCircle2, CircleDot, FolderKanban, ListChecks, TimerReset } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, CircleDot, FolderKanban, GitPullRequest, ListChecks, Megaphone, TimerReset } from 'lucide-react';
 import { Button } from '../components/ui';
+import { waitingLabel } from '../components/pull-request';
+import { notificationTime } from '../components/notifications';
+import { navigate, paths } from '../routes';
 import { dateLabel } from '../lib/format';
-import type { OverdueTask, SummaryProject } from '../lib/types';
+import type { Announcement, OverdueTask, PullRequest, SummaryProject } from '../lib/types';
 
 export function dashboardStats(summary: SummaryProject[], overdue: OverdueTask[]) {
   const total = summary.reduce((sum, project) => sum + project.columns.reduce((count, column) => count + column.taskCount, 0), 0);
@@ -68,8 +71,22 @@ function ProjectCard({project, isAdmin, onOpen}: {project: SummaryProject; isAdm
   </article>;
 }
 
+/** Bekleyen PR'lar ve son duyurular: özet görünümde ilk birkaç kayıt, devamı kendi sayfasında. */
+function DashboardPanel({icon, title, subtitle, link, empty, children}: {
+  icon: React.ReactNode; title: string; subtitle: string; link: string; empty: string; children: React.ReactNode;
+}) {
+  return <section className="dashboard-panel">
+    <header>
+      <span className="dashboard-overdue-icon">{icon}</span>
+      <div><h2>{title}</h2><p>{subtitle}</p></div>
+      <Button variant="ghost" size="sm" onClick={() => navigate(link)}>Tümü <ArrowRight size={14}/></Button>
+    </header>
+    {children ?? <div className="dashboard-clear-state"><CheckCircle2 size={28}/><span>{empty}</span></div>}
+  </section>;
+}
+
 /** Yönetici tüm task’ları, personel yalnızca kendine atanmış task’ları görür. */
-export function DashboardPage({summary, overdue, isAdmin, onOpen}: {summary: SummaryProject[]; overdue: OverdueTask[]; isAdmin: boolean; onOpen: (projectId: number) => void}) {
+export function DashboardPage({summary, overdue, openPrs, announcements, isAdmin, onOpen}: {summary: SummaryProject[]; overdue: OverdueTask[]; openPrs: PullRequest[]; announcements: Announcement[]; isAdmin: boolean; onOpen: (projectId: number) => void}) {
   if (!summary.length) {
     return <div className="empty-panel"><div><FolderKanban size={22}/></div><strong>Henüz proje yok</strong>
       <span>{isAdmin ? 'Projeler sayfasından ilk projeyi oluşturun.' : 'Bir projeye eklendiğinizde burada görünecek.'}</span></div>;
@@ -104,6 +121,30 @@ export function DashboardPage({summary, overdue, isAdmin, onOpen}: {summary: Sum
         <div className="dashboard-project-grid">{summary.map(project => <ProjectCard key={project.id} project={project} isAdmin={isAdmin} onOpen={onOpen}/>)}</div>
       </section>
       <OverduePanel tasks={overdue} onOpen={onOpen}/>
+    </div>
+
+    <div className="dashboard-panels">
+      <DashboardPanel icon={<GitPullRequest size={19}/>} title="Bekleyen PR’lar" link={paths.pullRequests}
+        subtitle={openPrs.length ? `${openPrs.length} PR inceleme bekliyor.` : 'Açık pull request yok.'}
+        empty="İnceleme bekleyen PR bulunmuyor.">
+        {openPrs.length ? <div className="dashboard-overdue-list">{openPrs.slice(0, 5).map(row =>
+          <button key={row.id} type="button" onClick={() => navigate(paths.pullRequests)}>
+            <span><strong>{row.title}</strong><small>{row.projectName} · {row.createdByName ?? 'Bilinmeyen kişi'}</small></span>
+            <span className="dashboard-overdue-date"><b>{waitingLabel(row.waitingDays)}</b></span>
+          </button>)}
+        </div> : null}
+      </DashboardPanel>
+
+      <DashboardPanel icon={<Megaphone size={19}/>} title="Duyurular" link={paths.announcements}
+        subtitle={announcements.length ? `${announcements.length} duyuru yayımlandı.` : 'Henüz duyuru yok.'}
+        empty="Yayımlanmış duyuru bulunmuyor.">
+        {announcements.length ? <div className="dashboard-overdue-list">{announcements.slice(0, 5).map(item =>
+          <button key={item.id} type="button" onClick={() => navigate(paths.announcements)}>
+            <span><strong>{item.title}</strong><small>{item.author?.name ?? 'Silinmiş kullanıcı'} · {notificationTime(item.createdAt)}</small></span>
+            {item.mandatory && !item.readAt && <span className="announcement-new">Yeni</span>}
+          </button>)}
+        </div> : null}
+      </DashboardPanel>
     </div>
   </div>;
 }

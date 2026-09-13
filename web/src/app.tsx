@@ -4,6 +4,7 @@ import { api, authToken, fileBody, setToken } from './api';
 import { Brand } from './components/brand';
 import { Login } from './components/login';
 import { Sidebar } from './components/sidebar';
+import { subscribeLive } from './lib/live';
 import { NotificationBell } from './components/notifications';
 import { TaskSearch } from './components/task-search';
 import { AnnouncementPopup } from './components/announcement';
@@ -178,18 +179,49 @@ export function App() {
     return () => window.removeEventListener('focus', sync);
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false, pending = false, rerun = false;
+    const sync = async () => {
+      if (pending) {rerun = true; return;}
+      pending = true;
+      try {
+        do {
+          rerun = false;
+          if (route.page === 'board') {
+            const next = await api<Board>(`projects/${route.projectId}/board`);
+            if (!cancelled) setBoard(next);
+          } else if (route.page === 'dashboard') {
+            const [overview, late] = await Promise.all([api<SummaryProject[]>('dashboard'), api<OverdueTask[]>('dashboard/overdue')]);
+            if (!cancelled) {setSummary(overview); setOverdue(late);}
+          }
+          const feed = await api<NotificationFeed>('notifications');
+          if (!cancelled) setFeed(feed);
+        } while (rerun && !cancelled);
+      } catch (err) {
+        if (!cancelled) {if (route.page === 'board') setBoard(emptyBoard); setError((err as Error).message);}
+      } finally {pending = false;}
+    };
+    const unsubscribe = subscribeLive(() => {void sync();});
+    return () => {cancelled = true; unsubscribe();};
+  }, [user?.id, path]);
+
   // Adres değişince o sayfanın verisi çekilir; yenile ve geri/ileri de aynı yoldan geçer.
   useEffect(() => {
     if (!user) return;
     void run(async () => {
       switch (route.page) {
         case 'dashboard': {
-          const [overview, late] = await Promise.all([
+          const [overview, late, prFeed, news] = await Promise.all([
             api<SummaryProject[]>('dashboard'),
             api<OverdueTask[]>('dashboard/overdue'),
+            api<PullRequestFeed>('pull-requests').catch(() => emptyPullRequests),
+            api<Announcement[]>('announcements').catch(() => [] as Announcement[]),
           ]);
           setSummary(overview);
           setOverdue(late);
+          setPullRequests(prFeed);
+          setAnnouncements(news);
           break;
         }
         case 'projects':
@@ -446,7 +478,9 @@ export function App() {
       {error && <div className="page-error error" role="alert">{error}</div>}
 
       {route.page === 'dashboard' && <div className="page-body">
-        <DashboardPage summary={summary} overdue={overdue} isAdmin={!!isAdmin} onOpen={id => navigate(paths.board(id))}/>
+        <DashboardPage summary={summary} overdue={overdue} isAdmin={!!isAdmin}
+          openPrs={pullRequests.rows.filter(row => row.state === 'open')} announcements={announcements}
+          onOpen={id => navigate(paths.board(id))}/>
       </div>}
 
       {route.page === 'projects' && <div className="page-body">
