@@ -725,3 +725,10 @@ td {
 .pr-warning-row > a:hover { text-decoration: underline; }
 .pr-warning-row > button { margin-left: auto; flex-shrink: 0; }
 .log-action.pr { border-color: var(--critical-border); color: var(--critical); }
+.pr-project {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--muted-foreground);
+  font-size: 10px;
+}

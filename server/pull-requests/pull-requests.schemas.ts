@@ -28,15 +28,18 @@ export const pullRequestSchema: SchemaObject = {
 };
 
 export const pullRequestsSchema: SchemaObject = {
-  type: 'object', required: ['projects', 'projectId', 'tasks', 'rows'], properties: {
+  type: 'object', required: ['projects', 'projectId', 'rows'], properties: {
     projects: {type: 'array', description: 'PR görüntülenebilen projeler.',
       items: {type: 'object', properties: {id, name: {type: 'string'}}}},
-    projectId: {...id, nullable: true, description: 'Listenin getirildiği proje; erişilebilir proje yoksa null.'},
-    tasks: {type: 'array', description: 'Projedeki task’lar; PR’a bağlamak için.',
-      items: {type: 'object', properties: {id, title: {type: 'string'}}}},
+    projectId: {...id, nullable: true, description: 'Süzülen proje; null ise tüm projeler listelenmiştir.'},
     rows: {type: 'array', description: 'Önce bekleyenler, sonra kapanmışlar; her grupta en eski üstte.',
       items: pullRequestSchema},
   },
+};
+
+export const linkableTasksSchema: SchemaObject = {
+  type: 'array', description: 'PR’a bağlanabilecek task’lar.',
+  items: {type: 'object', required: ['id', 'title'], properties: {id, title: {type: 'string'}}},
 };
 
 export const newPullRequestSchema: SchemaObject = {

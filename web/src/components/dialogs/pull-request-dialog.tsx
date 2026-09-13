@@ -1,35 +1,51 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, GitPullRequest, Search, X } from 'lucide-react';
-import { Button, Input, Textarea } from '../ui';
+import { Button, Input, Select, Textarea } from '../ui';
 import { DialogActions, DialogShell } from './shell';
 import { matches, taskCode } from '../../lib/format';
-import type { PullRequest } from '../../lib/types';
+import type { LinkableTask, PullRequest } from '../../lib/types';
 
 export type PullRequestDraft = 'new' | PullRequest;
 
 type Props = {
   draft: PullRequestDraft | null;
-  /** Bağlanabilecek task'lar; yalnızca PR'ın projesindekiler gelir. */
-  tasks: {id: number; title: string}[];
+  projects: {id: number; name: string}[];
+  /** Ekranda seçili proje; "tüm projeler" görünümünde null gelir. */
+  defaultProjectId: number | null;
   busy: boolean;
   error: string;
+  /** Seçilen projenin task'larını getirir; PR ile task'lar aynı projede olmak zorunda. */
+  onLoadTasks: (projectId: number) => Promise<LinkableTask[]>;
   onClose: () => void;
-  onSubmit: (values: {url: string; title: string; description: string; taskIds: number[]}, editing: PullRequest | null) => void;
+  onSubmit: (values: {projectId: number; url: string; title: string; description: string; taskIds: number[]}, editing: PullRequest | null) => void;
 };
 
 /** PR ekleme ve düzenleme. Bağlı task sayısı serbesttir: sıfır da olabilir, çok da. */
-export function PullRequestDialog({draft, tasks, busy, error, onClose, onSubmit}: Props) {
+export function PullRequestDialog({draft, projects, defaultProjectId, busy, error, onLoadTasks, onClose, onSubmit}: Props) {
   const editing = draft === 'new' || draft === null ? null : draft;
+  // Düzenlemede proje kilitlidir: PR'ın projesi oluşturulduktan sonra değişmez.
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<LinkableTask[]>([]);
   const [taskIds, setTaskIds] = useState<number[]>([]);
   const [query, setQuery] = useState('');
   const [picking, setPicking] = useState(false);
   const picker = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (draft === null) return;
     setTaskIds(editing ? editing.tasks.map(task => task.id) : []);
     setQuery('');
     setPicking(false);
+    setProjectId(editing ? editing.projectId : defaultProjectId ?? projects[0]?.id ?? null);
   }, [draft]);
+
+  // Proje değişince o projenin task'ları çekilir; seçili bağlar temizlenir.
+  useEffect(() => {
+    if (draft === null || projectId === null) { setTasks([]); return; }
+    let active = true;
+    void onLoadTasks(projectId).then(list => {if (active) setTasks(list);}).catch(() => {if (active) setTasks([]);});
+    return () => {active = false;};
+  }, [draft, projectId]);
 
   // Dışarı tıklama ve Esc yalnızca listeyi kapatır; modal açık kalır.
   useEffect(() => {
@@ -66,13 +82,21 @@ export function PullRequestDialog({draft, tasks, busy, error, onClose, onSubmit}
     <form key={editing ? `pr-${editing.id}` : 'pr-new'} onSubmit={event => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
+      if (projectId === null) return;
       onSubmit({
+        projectId,
         url: String(form.get('url')).trim(),
         title: String(form.get('title')).trim(),
         description: String(form.get('description') ?? '').trim(),
         taskIds,
       }, editing);
     }}>
+      {/* Tüm projeler görünümünde PR'ın hangi projeye ekleneceği burada seçilir. */}
+      <label>Proje
+        <Select value={String(projectId ?? '')} disabled={busy || editing !== null} placeholder="Proje seçin"
+          onValueChange={value => {setProjectId(Number(value)); setTaskIds([]);}}
+          options={projects.map(project => ({value: project.id, label: project.name}))}/>
+      </label>
       <label>PR adresi
         <Input name="url" type="url" defaultValue={editing?.url ?? ''} maxLength={500} required autoFocus
           placeholder="https://github.com/kullanici/depo/pull/42"/>
@@ -124,7 +148,7 @@ export function PullRequestDialog({draft, tasks, busy, error, onClose, onSubmit}
       </div>
 
       <DialogActions busy={busy} onCancel={onClose}>
-        <Button disabled={busy}>{busy ? 'Kaydediliyor…' : editing ? 'Değişiklikleri kaydet' : 'PR ekle'}
+        <Button disabled={busy || projectId === null}>{busy ? 'Kaydediliyor…' : editing ? 'Değişiklikleri kaydet' : 'PR ekle'}
           <GitPullRequest size={15}/></Button>
       </DialogActions>
     </form>

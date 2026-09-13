@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, Inject, NotFoundExc
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Store, TODAY, idField, textField, type User } from '../store.ts';
 import { type AuthRequest, allow } from '../common/auth.ts';
-import { editPullRequestSchema, newPullRequestSchema, pullRequestsSchema, statePullRequestSchema } from './pull-requests.schemas.ts';
+import { editPullRequestSchema, linkableTasksSchema, newPullRequestSchema, pullRequestsSchema, statePullRequestSchema } from './pull-requests.schemas.ts';
 
 type PrState = 'open' | 'merged' | 'closed';
 const STATES: PrState[] = ['open', 'merged', 'closed'];
@@ -43,6 +43,9 @@ export class PullRequestsController {
     return ids;
   }
 
+  /** Yazma sonrası hangi görünümün döneceği: istemcinin açık filtresi (boşsa tüm projeler). */
+  private view(value?: string) { return value === undefined || value === '' ? undefined : idField(value); }
+
   /** PR kaydı + projesi; erişimi olmayan kullanıcıya 404/403 döner. */
   private async reachablePr(user: User, pullRequestId: number) {
     const row = (await this.store.db.query(
@@ -62,7 +65,7 @@ export class PullRequestsController {
     }
   }
 
-  private async rows(projectId: number) {
+  private async rows(projectIds: number[]) {
     return (await this.store.db.query(`
       SELECT pr.id, pr."projectId", p.name AS "projectName", pr.url, pr.title, pr.description, pr.state,
         pr."mergedAt", pr."createdAt",
@@ -76,38 +79,50 @@ export class PullRequestsController {
       JOIN projects p ON p.id=pr."projectId"
       LEFT JOIN users mb ON mb.id=pr."mergedBy"
       LEFT JOIN users cb ON cb.id=pr."createdBy"
-      WHERE pr."projectId"=$1
+      WHERE pr."projectId" = ANY($1)
       -- Bekleyenler üstte, her grupta en eski önce: en uzun bekleyen ilk sırada.
-      ORDER BY (pr.state <> 'open'), pr."createdAt", pr.id`, [projectId])).rows;
+      ORDER BY (pr.state <> 'open'), pr."createdAt", pr.id`, [projectIds])).rows;
   }
 
-  /** Liste yanıtı: projeler, seçili proje, bağlanabilecek task'lar ve PR'lar. */
+  /**
+   * Liste yanıtı. `requested` verilmezse (varsayılan) erişilebilen tüm projelerin
+   * PR'ları döner ve `projectId` null olur; verilirse yalnızca o proje süzülür.
+   */
   private async feed(user: User, requested?: number) {
-    const projectIds = await this.store.projectIds(user);
-    const projects = projectIds.length
-      ? (await this.store.db.query('SELECT id, name FROM projects WHERE id = ANY($1) ORDER BY name', [projectIds])).rows
+    const reachable = await this.store.projectIds(user);
+    const projects = reachable.length
+      ? (await this.store.db.query('SELECT id, name FROM projects WHERE id = ANY($1) ORDER BY name', [reachable])).rows
       : [];
-    if (!projects.length) return {projects: [], projectId: null, tasks: [], rows: []};
-    const projectId = requested !== undefined && projectIds.includes(requested) ? requested : projects[0].id as number;
-    const tasks = (await this.store.db.query(
-      `SELECT t.id, t.title FROM tasks t JOIN columns c ON c.id=t."columnId" WHERE c."projectId"=$1 ORDER BY t.id DESC`, [projectId],
-    )).rows;
-    return {projects, projectId, tasks, rows: await this.rows(projectId)};
+    if (!projects.length) return {projects: [], projectId: null, rows: []};
+    // Erişimi olmayan bir proje istenirse süzme yok sayılır; veri sızmaz, liste tümüne düşer.
+    const projectId = requested !== undefined && reachable.includes(requested) ? requested : null;
+    return {projects, projectId, rows: await this.rows(projectId === null ? reachable : [projectId])};
   }
 
   @ApiOperation({summary: 'Projenin PR’larını listele (pr.view yetkisi)'})
-  @ApiQuery({name: 'projectId', required: false, type: Number, description: 'Boş bırakılırsa ilk erişilebilir proje getirilir.'})
+  @ApiQuery({name: 'projectId', required: false, type: Number, description: 'Boş bırakılırsa erişilebilen tüm projelerin PR’ları döner.'})
   @ApiResponse({status: 200, schema: pullRequestsSchema})
   @Get() async index(@Req() req: AuthRequest, @Query('projectId') projectId?: string) {
     const user = allow(req, 'pr.view');
     return this.feed(user, projectId === undefined || projectId === '' ? undefined : idField(projectId));
   }
 
+  @ApiOperation({summary: 'Bir projenin task’larını listele — PR’a bağlamak için (pr.view yetkisi)'})
+  @ApiQuery({name: 'projectId', required: true, type: Number})
+  @ApiResponse({status: 200, schema: linkableTasksSchema})
+  @Get('tasks') async linkable(@Req() req: AuthRequest, @Query('projectId') projectId: string) {
+    const user = allow(req, 'pr.view');
+    const id = await this.store.reachable(user, idField(projectId));
+    return (await this.store.db.query(
+      `SELECT t.id, t.title FROM tasks t JOIN columns c ON c.id=t."columnId" WHERE c."projectId"=$1 ORDER BY t.id DESC`, [id],
+    )).rows;
+  }
+
   @ApiOperation({summary: 'PR ekle (pr.create yetkisi)'})
   @ApiBody({schema: newPullRequestSchema})
   @ApiResponse({status: 400, description: 'Geçersiz istek.'})
   @ApiResponse({status: 201, schema: pullRequestsSchema})
-  @Post() async create(@Req() req: AuthRequest, @Body() body: Record<string, unknown>) {
+  @Post() async create(@Req() req: AuthRequest, @Body() body: Record<string, unknown>, @Query('view') view?: string) {
     const user = allow(req, 'pr.create');
     // Tamamlanmış projede pano dondurulur; PR eklemek de bir pano değişikliğidir.
     const projectId = await this.store.writable(user, idField(body.projectId));
@@ -128,7 +143,8 @@ export class PullRequestsController {
       throw error;
     });
     await this.logForTasks(projectId, taskIds, 'pr.link', `PR bağlandı: ${title}`, user);
-    return {...await this.feed(user, projectId), createdPullRequestId: created};
+    // Yazma sonrası liste tüm projelere düşer; ekran kendi filtresini yeniden uygular.
+    return {...await this.feed(user, this.view(view)), createdPullRequestId: created};
   }
 
   @ApiOperation({summary: 'PR’ı düzenle (pr.update yetkisi)'})
@@ -136,7 +152,7 @@ export class PullRequestsController {
   @ApiBody({schema: editPullRequestSchema})
   @ApiResponse({status: 404, description: 'Kayıt bulunamadı.'})
   @ApiResponse({status: 200, schema: pullRequestsSchema})
-  @Patch(':id') async update(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+  @Patch(':id') async update(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: Record<string, unknown>, @Query('view') view?: string) {
     const user = allow(req, 'pr.update');
     const pullRequest = await this.reachablePr(user, idField(id));
     await this.store.writable(user, pullRequest.projectId);
@@ -171,7 +187,7 @@ export class PullRequestsController {
     const title = body.title === undefined ? pullRequest.title : String(body.title).trim();
     await this.logForTasks(pullRequest.projectId, after.filter(taskId => !before.includes(taskId)), 'pr.link', `PR bağlandı: ${title}`, user);
     await this.logForTasks(pullRequest.projectId, before.filter(taskId => !after.includes(taskId)), 'pr.unlink', `PR bağı kaldırıldı: ${title}`, user);
-    return this.feed(user, pullRequest.projectId);
+    return this.feed(user, this.view(view));
   }
 
   @ApiOperation({summary: 'PR durumunu değiştir — onaylandı/kapatıldı/bekliyor (pr.merge yetkisi)'})
@@ -179,7 +195,7 @@ export class PullRequestsController {
   @ApiBody({schema: statePullRequestSchema})
   @ApiResponse({status: 404, description: 'Kayıt bulunamadı.'})
   @ApiResponse({status: 200, schema: pullRequestsSchema})
-  @Patch(':id/state') async setState(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+  @Patch(':id/state') async setState(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: Record<string, unknown>, @Query('view') view?: string) {
     const user = allow(req, 'pr.merge');
     const pullRequest = await this.reachablePr(user, idField(id));
     await this.store.writable(user, pullRequest.projectId);
@@ -198,14 +214,14 @@ export class PullRequestsController {
       )).rows.map(row => row.taskId as number);
       await this.logForTasks(pullRequest.projectId, linked, 'pr.merge', `PR onaylandı: ${pullRequest.title}`, user);
     }
-    return this.feed(user, pullRequest.projectId);
+    return this.feed(user, this.view(view));
   }
 
   @ApiOperation({summary: 'PR’ı sil (pr.delete yetkisi)'})
   @ApiParam({name: 'id', type: Number, example: 12})
   @ApiResponse({status: 404, description: 'Kayıt bulunamadı.'})
   @ApiResponse({status: 200, schema: pullRequestsSchema})
-  @Delete(':id') async remove(@Req() req: AuthRequest, @Param('id') id: string) {
+  @Delete(':id') async remove(@Req() req: AuthRequest, @Param('id') id: string, @Query('view') view?: string) {
     const user = allow(req, 'pr.delete');
     const pullRequest = await this.reachablePr(user, idField(id));
     await this.store.writable(user, pullRequest.projectId);
@@ -214,6 +230,6 @@ export class PullRequestsController {
     )).rows.map(row => row.taskId as number);
     await this.store.db.query('DELETE FROM pull_requests WHERE id=$1', [pullRequest.id]);
     await this.logForTasks(pullRequest.projectId, linked, 'pr.unlink', `PR silindi: ${pullRequest.title}`, user);
-    return this.feed(user, pullRequest.projectId);
+    return this.feed(user, this.view(view));
   }
 }

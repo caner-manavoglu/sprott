@@ -33,7 +33,7 @@ import { AnnouncementDialog, type AnnouncementDraft } from './components/dialogs
 import { allowed, roleLabel } from './lib/format';
 import { useAsync } from './lib/use-async';
 import { emptyBoard, emptyPullRequests, emptyFeed } from './lib/types';
-import type { ActivityLog, Announcement, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
+import type { ActivityLog, Announcement, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, LinkableTask, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
 import { headingFor, matchRoute, navigate, pageTitles, paths, usePath } from './routes';
 
 export function App() {
@@ -78,6 +78,8 @@ export function App() {
 
   // Açık modallar.
   const [pullRequests, setPullRequests] = useState<PullRequestFeed>(emptyPullRequests);
+  /** PR ekranının proje süzgeci; null "tüm projeler" demektir ve varsayılandır. */
+  const [prProject, setPrProject] = useState<number | null>(null);
   const [pullRequestDraft, setPullRequestDraft] = useState<PullRequestDraft | null>(null);
   /** Tamamlandı sütununa taşınırken açık PR uyarısı; onaylanırsa taşıma yapılır. */
   const [prWarning, setPrWarning] = useState<{taskId: number; columnId: number} | null>(null);
@@ -234,7 +236,8 @@ export function App() {
           setFeed(await api<NotificationFeed>('notifications'));
           break;
         case 'pullRequests':
-          // Sunucu erişilebilen ilk projeyi seçer; filtre burada sıfırlanmaz.
+          // Sayfa her açılışta tüm projelerle başlar.
+          setPrProject(null);
           setPullRequests(await api<PullRequestFeed>('pull-requests'));
           break;
         case 'announcements':
@@ -362,6 +365,9 @@ export function App() {
   };
 
   /** PR ekranının verisini tazeler; pano açıksa kartlardaki rozet de güncellenir. */
+  /** Yazma uçlarına eklenen süzgeç; yanıt ekrandaki görünümle aynı kapsamda döner. */
+  const prView = () => (prProject === null ? '' : `?view=${prProject}`);
+
   const reloadPullRequests = async (feed: PullRequestFeed) => {
     setPullRequests(feed);
     if (route.page === 'board') setBoard(await api<Board>(`projects/${route.projectId}/board`));
@@ -517,18 +523,21 @@ export function App() {
       {route.page === 'pullRequests' && <div className="page-body">
         <PullRequestsPage feed={pullRequests} busy={busy}
           canCreate={can.createPr} canUpdate={can.updatePr} canDelete={can.deletePr} canMerge={can.mergePr}
-          onProject={projectId => void run(async () =>
-            setPullRequests(await api<PullRequestFeed>(`pull-requests?projectId=${projectId}`)))}
+          onProject={projectId => void run(async () => {
+            setPrProject(projectId);
+            setPullRequests(await api<PullRequestFeed>(
+              projectId === null ? 'pull-requests' : `pull-requests?projectId=${projectId}`));
+          })}
           onNew={() => {setError(''); setPullRequestDraft('new');}}
           onEdit={pullRequest => {setError(''); setPullRequestDraft(pullRequest);}}
           onState={(pullRequest, state) => void run(async () =>
-            reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}/state`, 'PATCH', {state})))}
+            reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}/state${prView()}`, 'PATCH', {state})))}
           onDelete={pullRequest => setConfirmation({
             title: 'PR silinsin mi?',
             description: `“${pullRequest.title}” kaydı ve task bağları silinecek. Pull request’in kendisi GitHub’da kalır.`,
             confirmLabel: 'sil', destructive: true,
             action: () => run(async () =>
-              reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}`, 'DELETE'))),
+              reloadPullRequests(await api<PullRequestFeed>(`pull-requests/${pullRequest.id}${prView()}`, 'DELETE'))),
           })}/>
       </div>}
 
@@ -585,13 +594,14 @@ export function App() {
         : <ReportsPage report={report} busy={busy} onOpenPerson={id => navigate(paths.reportDetail(id))}/>)}
     </main>
 
-    <PullRequestDialog draft={pullRequestDraft} tasks={pullRequests.tasks} busy={busy} error={error}
+    <PullRequestDialog draft={pullRequestDraft} projects={pullRequests.projects} defaultProjectId={prProject}
+      busy={busy} error={error}
+      onLoadTasks={projectId => api<LinkableTask[]>(`pull-requests/tasks?projectId=${projectId}`)}
       onClose={() => setPullRequestDraft(null)}
-      onSubmit={(values, editing) => void run(async () => {
-        const payload = {...values, projectId: pullRequests.projectId};
+      onSubmit={({projectId, ...values}, editing) => void run(async () => {
         setPullRequests(editing
-          ? await api<PullRequestFeed>(`pull-requests/${editing.id}`, 'PATCH', values)
-          : await api<PullRequestFeed>('pull-requests', 'POST', payload));
+          ? await api<PullRequestFeed>(`pull-requests/${editing.id}${prView()}`, 'PATCH', values)
+          : await api<PullRequestFeed>(`pull-requests${prView()}`, 'POST', {...values, projectId}));
         setPullRequestDraft(null);
       })}/>
 

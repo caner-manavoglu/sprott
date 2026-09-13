@@ -62,15 +62,17 @@ export type PullRequest = {
   tasks: {id: number; title: string; columnName: string}[];
 };
 
-/** PR ekranının yanıtı: projeler, seçili proje, bağlanabilir task'lar ve kayıtlar. */
+/** PR ekranının yanıtı. `projectId` null ise liste tüm projeleri kapsar. */
 export type PullRequestFeed = {
   projects: {id: number; name: string}[];
   projectId: number | null;
-  tasks: {id: number; title: string}[];
   rows: PullRequest[];
 };
 
-export const emptyPullRequests: PullRequestFeed = {projects: [], projectId: null, tasks: [], rows: []};
+export const emptyPullRequests: PullRequestFeed = {projects: [], projectId: null, rows: []};
+
+/** PR'a bağlanabilecek task; proje seçilince ayrı uçtan çekilir. */
+export type LinkableTask = {id: number; title: string};
 export type TaskComment = {
   id: number;
   body: string;

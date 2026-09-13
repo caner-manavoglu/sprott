@@ -12,7 +12,7 @@ type Props = {
   canUpdate: boolean;
   canDelete: boolean;
   canMerge: boolean;
-  onProject: (projectId: number) => void;
+  onProject: (projectId: number | null) => void;
   onNew: () => void;
   onEdit: (pullRequest: PullRequest) => void;
   onState: (pullRequest: PullRequest, state: PrState) => void;
@@ -36,9 +36,10 @@ export function PullRequestsPage({feed, busy, canCreate, canUpdate, canDelete, c
       <div className="permission-icon"><GitPullRequest size={21}/></div>
       <div><h2>Bekleyen PR’lar</h2><p>{open.length} PR inceleme bekliyor.</p></div>
       <div className="log-filters">
-        <Select value={String(feed.projectId ?? '')} disabled={busy} placeholder="Proje seçin"
-          onValueChange={value => onProject(Number(value))}
-          options={feed.projects.map(project => ({value: project.id, label: project.name}))}/>
+        {/* 0 = tüm projeler; varsayılan görünüm budur. */}
+        <Select value={String(feed.projectId ?? 0)} disabled={busy} placeholder="Tüm projeler"
+          onValueChange={value => onProject(Number(value) || null)}
+          options={[{value: 0, label: 'Tüm projeler'}, ...feed.projects.map(project => ({value: project.id, label: project.name}))]}/>
         {canCreate && <Button disabled={busy} onClick={onNew}><Plus size={15}/> PR ekle</Button>}
       </div>
     </div>
@@ -50,6 +51,8 @@ export function PullRequestsPage({feed, busy, canCreate, canUpdate, canDelete, c
           <a href={row.url} target="_blank" rel="noreferrer noopener" className="pr-title">
             {row.title} <ExternalLink size={13}/>
           </a>
+          {/* Tüm projeler görünümünde PR'ın hangi projeye ait olduğu yazılır. */}
+          {feed.projectId === null && <span className="pr-project">{row.projectName}</span>}
           <span className="pr-waiting">
             {row.state === 'open' ? waitingLabel(row.waitingDays)
               : row.state === 'merged' ? `${row.mergedByName ?? 'Bir kullanıcı'} onayladı`
