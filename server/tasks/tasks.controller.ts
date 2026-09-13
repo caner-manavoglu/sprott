@@ -392,11 +392,14 @@ export class TasksController {
     // Günlüğe yalnızca statü (sütun) değişimi yazılır; metin düzenlemeleri kayda girmez.
     if (after.columnId !== before.columnId) {
       const target = (await this.store.db.query('SELECT name FROM columns WHERE id=$1', [after.columnId])).rows[0] as {name: string} | undefined;
-      // Arayüz açık PR'ı olan task'ta uyarı verir; uyarıyı geçen taşımalar burada kayda geçer.
-      const openPrs = (await this.store.db.query(
-        `SELECT 1 FROM pull_request_tasks prt JOIN pull_requests pr ON pr.id=prt."pullRequestId"
-         WHERE prt."taskId"=$1 AND pr.state='open'`, [taskId],
-      )).rowCount ?? 0;
+      // Not yalnızca son (tamamlandı) sütuna taşımalarda düşer; arayüzdeki uyarı da
+      // aynı koşulla çıkar, böylece günlükteki not "uyarı geçildi" anlamını korur.
+      const openPrs = await this.store.isFinalColumn(projectId, after.columnId)
+        ? (await this.store.db.query(
+            `SELECT 1 FROM pull_request_tasks prt JOIN pull_requests pr ON pr.id=prt."pullRequestId"
+             WHERE prt."taskId"=$1 AND pr.state='open'`, [taskId],
+          )).rowCount ?? 0
+        : 0;
       await this.store.log({
         projectId, taskId, taskTitle: before.title, action: 'task.move',
         detail: `${before.columnName} → ${target?.name ?? '?'}${openPrs ? ` · ${openPrs} açık PR` : ''}`, actor: user,
