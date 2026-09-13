@@ -28,23 +28,28 @@ export function PrWarningDialog({task, columnName, busy, error, canMerge, onMerg
   return <DialogShell open={task !== null && open.length > 0} busy={busy} error={error} onClose={onCancel}
     title="Açık PR var" description={task ? `${taskCode(task.id)} · ${task.title}` : ''}>
     <div className="pr-warning">
+      {/* İkon ve metin iki flex öğesidir; metin tek kapsayıcıda kalmazsa
+          içindeki <strong> ayrı bir sütuna düşer ve satır parçalanır. */}
       <p className="pr-warning-lead">
-        <AlertTriangle size={16}/>
-        Bu task’ın <strong>{open.length} açık pull request’i</strong> var, ancak “{columnName}” sütununa taşınmak üzere.
+        <AlertTriangle size={17}/>
+        <span>
+          Bu task’ın <strong>{open.length} açık pull request’i</strong> var.
+          “{columnName}” sütununa taşımak üzeresiniz.
+        </span>
       </p>
 
       <div className="pr-warning-list">
         {open.map(pullRequest => <div key={pullRequest.id} className="pr-warning-row">
-          <a href={pullRequest.url} target="_blank" rel="noreferrer noopener">
-            {pullRequest.title} <ExternalLink size={12}/>
+          <a href={pullRequest.url} target="_blank" rel="noreferrer noopener" title={pullRequest.url}>
+            <span>{pullRequest.title}</span><ExternalLink size={12}/>
           </a>
           {canMerge && <Button type="button" variant="outline" size="sm" disabled={busy}
             onClick={() => onMerge(pullRequest.id)}><Check size={14}/> Onaylandı işaretle</Button>}
         </div>)}
       </div>
 
-      <p className="muted text-xs">
-        PR merge edildiyse yukarıdan onaylandı olarak işaretleyin. Yine de taşırsanız bu durum etkinlik günlüğüne kaydedilir.
+      <p className="pr-warning-note">
+        PR merge edildiyse yukarıdan onaylandı olarak işaretleyin. Yine de taşırsanız bu, etkinlik günlüğüne kaydedilir.
       </p>
 
       <DialogActions busy={busy} onCancel={onCancel} cancelLabel="Vazgeç">
