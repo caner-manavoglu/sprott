@@ -1,6 +1,7 @@
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui';
 import { fullName, roleLabel } from '../lib/format';
+import { moduleName, moduleSummary } from '../lib/permissions';
 import type { Definition, User } from '../lib/types';
 
 type Props = {
@@ -20,7 +21,7 @@ export function PermissionsPage({people, definitions, busy, onEdit}: Props) {
     <div className="table-scroll"><table>
       <thead><tr><th>Kullanıcı</th><th>Rol</th><th>Yetkiler</th><th>Aksiyonlar</th></tr></thead>
       <tbody>{people.map(person => {
-        const granted = definitions.filter(definition => person.permissions?.[definition.key]);
+        const summary = moduleSummary(person, definitions);
         return <tr key={person.id}>
           <td><div className="person">
             <span className="user-avatar">{person.name[0]}</span>
@@ -30,8 +31,14 @@ export function PermissionsPage({people, definitions, busy, onEdit}: Props) {
           <td>{person.role === 'admin'
             ? <span className="permission-summary">Tüm yetkiler</span>
             : <div className="permission-tags">
-                {granted.map(definition => <span className="permission-tag" key={definition.key}>{definition.label}</span>)}
-                {!granted.length && <span className="permission-summary">Yetki yok</span>}
+                {/* Modül başına tek rozet; tam liste ipucunda ve düzenleme modalında. */}
+                {summary.map(entry => <span className="permission-tag" key={entry.module}
+                  data-full={entry.granted === entry.total}
+                  title={`${moduleName(entry.module)} modülü
+${entry.labels.join('\n')}`}>
+                  {moduleName(entry.module)}<small>{entry.granted}/{entry.total}</small>
+                </span>)}
+                {!summary.length && <span className="permission-summary">Yetki yok</span>}
               </div>}
           </td>
           <td><Button variant="outline" size="sm" disabled={person.role === 'admin' || busy}

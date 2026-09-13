@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { Button } from '../ui';
 import { DialogActions, DialogShell } from './shell';
 import { moduleLabels } from '../../routes';
+import { byModule } from '../../lib/permissions';
 import type { Definition, User } from '../../lib/types';
 
 type Props = {
@@ -13,14 +14,6 @@ type Props = {
   onClose: () => void;
   onSubmit: (permissions: Record<string, boolean>, person: User) => void;
 };
-
-/** Yetkiler 'task.create' gibi anahtarlardan modül modül gruplanır. */
-const byModule = (definitions: Definition[]) =>
-  definitions.reduce<Record<string, Definition[]>>((groups, definition) => {
-    const module = definition.key.split('.')[0];
-    (groups[module] ||= []).push(definition);
-    return groups;
-  }, {});
 
 export function PermissionsDialog({person, definitions, busy, error, onClose, onSubmit}: Props) {
   const [draft, setDraft] = useState<Record<string, boolean>>({});

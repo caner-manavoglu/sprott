@@ -217,3 +217,8 @@
 :root[data-theme="dark"] .pr-task { background: var(--subtle); }
 :root[data-theme="dark"] .pr-warning-list { background: var(--subtle); }
 :root[data-theme="dark"] .log-action.pr { border-color: var(--critical-border); color: var(--critical); }
+
+/* Yetki tablosundaki modül rozetleri. */
+:root[data-theme="dark"] .permission-tag > small { background: var(--subtle); color: var(--muted-foreground); }
+:root[data-theme="dark"] .permission-tag[data-full="true"] { border-color: var(--green); color: var(--green); }
+:root[data-theme="dark"] .permission-tag[data-full="true"] > small { color: var(--green); }
