@@ -1,0 +1,208 @@
+/* Giriş ekranı: solda tanıtım paneli, sağda form. Dar ekranda yalnızca form kalır. */
+
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100dvh;
+}
+
+.login-art {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 46px 9%;
+  background: #123e32;
+  color: #fff;
+}
+
+.login-art .brand-icon { background: #f1fff21c; }
+.login-art .brand-dot { color: #8ed3ad; }
+
+.login-message {
+  margin: auto 0;
+  padding: 80px 0;
+}
+
+.login-message .eyebrow { color: #92baa8; }
+
+.login-message h1 {
+  margin: 20px 0;
+  font-size: clamp(32px, 3.5vw, 52px);
+  line-height: 1.18;
+  letter-spacing: -1.7px;
+}
+
+.login-message > p {
+  font-size: 14px;
+  color: #b0c9bd;
+}
+
+.login-foot {
+  font-size: 11px;
+  color: #8eaf9f;
+}
+
+/* Tanıtım panelindeki sahte pano görseli. */
+.board-illustration {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 13px;
+  margin-top: 50px;
+  padding: 18px;
+  border: 1px solid #ffffff14;
+  border-radius: 12px;
+  background: #ffffff07;
+  box-shadow: 0 20px 50px #09271c38;
+  transform: rotate(-3deg);
+}
+
+.illustration-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 12px;
+  font-size: 9px;
+  white-space: nowrap;
+  color: #c4d7cd;
+}
+
+.illustration-label i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a4c5b6;
+}
+
+.illustration-card {
+  height: 69px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #fffef8;
+  box-shadow: 0 3px 8px #00000008;
+}
+
+.illustration-card > span {
+  display: block;
+  height: 4px;
+  margin-bottom: 6px;
+  border-radius: 2px;
+  background: #dde4dd;
+}
+
+.illustration-card > span:nth-child(2) { width: 70%; }
+
+.illustration-card small {
+  display: block;
+  width: 15px;
+  height: 15px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: #dceddf;
+  color: #176b52;
+}
+
+.login-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.login-form-inner {
+  width: 100%;
+  max-width: 350px;
+}
+
+.login-badge {
+  display: grid;
+  place-items: center;
+  width: 47px;
+  height: 47px;
+  margin-bottom: 25px;
+  border: 1px solid #e0ece5;
+  border-radius: 13px;
+  background: #edf5f0;
+  color: #176b52;
+}
+
+.login-form h2 {
+  margin: 0 0 9px;
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: -.8px;
+}
+
+.login-form .muted { font-size: 13px; }
+
+/* Rol seçimi: arkadaki beyaz hap seçili sekmeye kayar. */
+.login-tabs {
+  position: relative;
+  display: flex;
+  margin: 28px 0;
+  padding: 4px;
+  border: 1px solid #edf0ed;
+  border-radius: 9px;
+  background: #f3f5f3;
+}
+
+.login-tabs-pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 5px #26352e13;
+  transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.login-tabs button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 50%;
+  padding: 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #7a837d;
+  font-size: 12px;
+  font-weight: 550;
+  transition: color .25s ease;
+}
+
+.login-tabs button[aria-pressed="true"] { color: #176b52; }
+.login-tabs button > svg { transition: transform .3s cubic-bezier(.4, 0, .2, 1); }
+.login-tabs button[aria-pressed="true"] > svg { transform: scale(1.12); }
+
+@media (prefers-reduced-motion: reduce) {
+  .login-tabs-pill,
+  .login-tabs button,
+  .login-tabs button > svg { transition: none; }
+}
+
+.login-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 23px 0 0;
+  font-size: 10px;
+  color: #8b958e;
+}
+
+/* Dar ekranda tanıtım paneli gizlenir; marka formun üstünde görünür. */
+.login-mobile-brand { display: none; }
+
+.login-theme-toggle {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  z-index: 1;
+}

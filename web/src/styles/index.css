@@ -1,0 +1,16 @@
+/* Tek giriş noktası; sıra cascade'i belirler:
+   değişkenler → eleman varsayılanları → sayfa/bileşen katmanları →
+   koyu tema → kırılma noktaları. */
+
+@import "tailwindcss";
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./shell.css";
+@import "./login.css";
+@import "./board.css";
+@import "./pages.css";
+@import "./dialogs.css";
+@import "./datepicker.css";
+@import "./dark.css";
+@import "./responsive.css";

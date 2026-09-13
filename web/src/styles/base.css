@@ -1,0 +1,109 @@
+/* Eleman varsayılanları ve her sayfada kullanılan küçük yardımcılar. */
+
+* {
+  box-sizing: border-box;
+  border-color: #e5e9e6;
+}
+
+body { margin: 0; }
+
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+
+button:focus-visible,
+.board-scroll:focus-visible {
+  outline: 2px solid #308e70;
+  outline-offset: 3px;
+}
+
+/* `.field`, <label> ile aynı düzen. Etiketlenebilir olmayan denetimler
+   (özel tarih seçici gibi) <label> içine konmaz: label kendi kontrolüne
+   ikinci bir click gönderir ve açılır paneli anında kapatır. */
+label,
+.field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+form > label,
+form > .field { margin-bottom: 19px; }
+
+textarea { resize: vertical; }
+
+.muted { color: #7d8781; }
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 1.7px;
+  color: #839187;
+}
+
+/* Marka kilidi: "Sprott" yazısı, noktası ve eğik çubuklardan oluşan simge. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -1.3px;
+}
+
+.brand-dot {
+  margin-left: -8px;
+  color: #42a17e;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 30px;
+  height: 30px;
+  margin-right: 1px;
+  border-radius: 8px;
+  background: #176b52;
+}
+
+.brand-icon span {
+  width: 4px;
+  height: 15px;
+  border-radius: 2px;
+  background: #fff;
+  transform: skewY(-19deg);
+}
+
+.brand-icon span:nth-child(2) { height: 20px; }
+.brand-icon span:nth-child(3) { height: 11px; }
+
+.theme-toggle {
+  flex-shrink: 0;
+  color: var(--foreground);
+}
+
+/* Sunucu hatası; sayfa başlığının altında ya da modal içinde görünür. */
+.error {
+  padding: 11px;
+  border: 1px solid #f3dcd8;
+  border-radius: 7px;
+  background: #fff3f1;
+  color: #a43c35;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.page-error { margin: 0 36px 15px; }
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  height: 100dvh;
+  color: #82917e;
+}

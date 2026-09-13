@@ -1,0 +1,212 @@
+/* Koyu tema düzeltmeleri. Değişkenler `tokens.css` içinde tanımlıdır;
+   burada yalnızca sabit renk kullanan bileşenler yeniden boyanır.
+   Sıra önemlidir: aşağıdaki kurallar yukarıdakileri bilinçli olarak ezer. */
+
+/* Yüzeyler. */
+:root[data-theme="dark"] :is(.sidebar, .kanban-column, .login-tabs, th) { background: #16211b; }
+
+:root[data-theme="dark"] :is(.workspace, .task-card) {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+:root[data-theme="dark"] .login-tabs-pill { background: var(--surface); }
+
+:root[data-theme="dark"] :is(.workspace-icon, .user-avatar, .task-total, .column-count,
+  .card-footer > span, .empty-column > div, .person-role, .report-total) {
+  background: var(--subtle);
+  color: var(--muted-foreground);
+}
+
+:root[data-theme="dark"] :is(.login-badge, .permission-icon, .task-type, .person-role.admin,
+  .sidebar nav button.active) {
+  background: var(--accent);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] :is(.summary-card, .empty-panel, .member-row) { border-color: var(--input); }
+
+:root[data-theme="dark"] .empty-panel > div {
+  background: var(--accent);
+  color: var(--green);
+}
+
+/* İkincil yazılar. */
+:root[data-theme="dark"] :is(.muted, .eyebrow, .login-note, .login-tabs button, .workspace small,
+  .nav-label, .sidebar nav button, .user-info small, .topbar > div, .topbar > div span, .role-pill,
+  .board-hint, .column-header > button, .task-code, .task-card > p, .card-footer, .empty-column,
+  .empty-column strong, .add-task, .board-footer, .task-detail .reveal p, .permissions-heading p,
+  th, .person small, .switch-label, .permissions-foot, .confirm-text, .loading) {
+  color: var(--muted-foreground);
+}
+
+:root[data-theme="dark"] :is(.summary-card header p, .summary-column, .empty-panel,
+  .empty-panel strong, .assignee-line, .member-info small, .project-cell small) {
+  color: var(--muted-foreground);
+}
+
+:root[data-theme="dark"] .task-code > svg { color: #91a298; }
+
+:root[data-theme="dark"] :is(input, textarea)::placeholder { color: #8e9e94; }
+
+/* Vurgular. */
+:root[data-theme="dark"] :is(.view-tab, .login-tabs button[aria-pressed="true"]) {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+:root[data-theme="dark"] :is(.add-task:hover, .kanban-column.drag-over) {
+  background: var(--accent);
+  color: var(--green);
+}
+
+/* Kenar çubuğu gezintisi. */
+:root[data-theme="dark"] .sidebar nav button.active {
+  background: none;
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .sidebar nav button:not(.active):hover {
+  background: var(--subtle);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .sidebar nav button.open { color: var(--green); }
+
+:root[data-theme="dark"] .sidebar nav .nav-toggle { color: var(--muted-foreground); }
+:root[data-theme="dark"] .sidebar nav .nav-toggle:hover { background: var(--subtle); }
+
+:root[data-theme="dark"] .nav-sub:before { background: var(--input); }
+:root[data-theme="dark"] .nav-sub-dot { background: var(--input); }
+:root[data-theme="dark"] .sidebar nav .nav-sub button { color: var(--muted-foreground); }
+
+:root[data-theme="dark"] .sidebar nav .nav-sub button:hover {
+  background: var(--subtle);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .sidebar nav .nav-sub button.active {
+  background: var(--accent);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] :is(.sidebar nav .nav-sub button.active .nav-sub-dot,
+  .sidebar nav .nav-sub button.active:after) {
+  background: var(--green);
+}
+
+/* Kişi filtresi. */
+:root[data-theme="dark"] :is(.people-chip, .assignee-avatar) {
+  border-color: var(--input);
+  background: var(--subtle);
+  color: var(--muted-foreground);
+}
+
+:root[data-theme="dark"] .people-chip.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .people-name {
+  background: #0c120f;
+  color: var(--foreground);
+}
+
+:root[data-theme="dark"] .people-panel {
+  border-color: var(--input);
+  background: var(--surface);
+  box-shadow: 0 16px 34px #0009;
+}
+
+:root[data-theme="dark"] :is(.people-results button, .task-assignee, .people-search) {
+  color: var(--muted-foreground);
+}
+
+:root[data-theme="dark"] .people-results button:hover { background: var(--subtle); }
+
+:root[data-theme="dark"] .people-results button.active {
+  background: var(--accent);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .filter-pill {
+  border-color: var(--input);
+  background: var(--accent);
+  color: var(--green);
+}
+
+/* Yetkiler, formlar ve kaydırma çubuğu. */
+:root[data-theme="dark"] .permission-tag {
+  border-color: var(--input);
+  background: var(--subtle);
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .permission-group { border-color: var(--input); }
+:root[data-theme="dark"] .permission-group.drop-zone { border-color: var(--input); }
+:root[data-theme="dark"] :is(.permission-summary, .permission-group h3) { color: var(--muted-foreground); }
+:root[data-theme="dark"] .drag-handle { color: var(--muted-foreground); }
+
+:root[data-theme="dark"] .switch-track { background: #526358; }
+:root[data-theme="dark"] .switch-label input:checked + .switch-track { background: #438d67; }
+
+:root[data-theme="dark"] .error {
+  border-color: #74473f;
+  background: #392320;
+  color: #ffb4a9;
+}
+
+:root[data-theme="dark"] .board-scroll { scrollbar-color: #405749 #16211b; }
+
+/* Kenar çubuğu açma/kapama düğmeleri. */
+:root[data-theme="dark"] .sidebar-toggle { color: var(--muted-foreground); }
+:root[data-theme="dark"] :is(.sidebar-toggle:hover, .sidebar-open-toggle:hover) {
+  background: var(--subtle);
+  color: var(--green);
+}
+:root[data-theme="dark"] .sidebar-open-toggle { border-color: var(--input); }
+
+/* Süresi geçen görev paneli; koyu temanın genel kenar/ikon kurallarını ezer. */
+:root[data-theme="dark"] .overdue-panel.has-late { border-color: var(--late-border); }
+:root[data-theme="dark"] .permission-icon.late {
+  background: var(--late-soft);
+  color: var(--late);
+}
+
+/* Grup yöneticisi etiketi; koyu temanın genel `.person-role` kuralını ezer. */
+:root[data-theme="dark"] .person-role.manager {
+  border-color: var(--green);
+  background: var(--accent);
+  color: var(--green);
+}
+
+/* Rapor başlığındaki gecikme özeti; genel `.report-total` kuralını ezer. */
+:root[data-theme="dark"] .report-total.late {
+  border-color: var(--late-border);
+  background: var(--late-soft);
+  color: var(--late);
+}
+
+/* Tamamlanmış proje etiketi; genel `.person-role` kuralını ezer. */
+:root[data-theme="dark"] .person-role.done {
+  border-color: var(--green);
+  background: var(--accent);
+  color: var(--green);
+}
+
+/* Günlük işlem etiketleri; koyu temanın genel kurallarını ezer. */
+:root[data-theme="dark"] .log-action { border-color: var(--input); color: var(--muted-foreground); }
+:root[data-theme="dark"] .log-action.create { border-color: var(--green); color: var(--green); }
+:root[data-theme="dark"] .log-action.delete {
+  border-color: var(--late-border);
+  background: var(--late-soft);
+  color: var(--late);
+}
+
+/* Altın rozet koyu temada da kendi zeminini korur; genel `.card-footer > span`
+   kuralı daha güçlü olduğu için burada ayrıca yazılır. */
+:root[data-theme="dark"] .task-priority[data-priority="highest"] {
+  background: var(--critical-soft);
+  color: var(--critical);
+}

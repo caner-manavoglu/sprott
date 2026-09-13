@@ -1,0 +1,65 @@
+/* Tema değişkenleri. Tailwind yardımcıları `@theme inline` ile aynı
+   değişkenlere bağlanır, böylece renkler tek yerden yönetilir. */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #fff;
+  --color-accent: var(--accent);
+  --color-input: var(--input);
+  --color-ring: #308e70;
+  --color-destructive: #bd3838;
+  --color-muted-foreground: var(--muted-foreground);
+}
+
+:root {
+  --background: #fff;
+  --foreground: #26352e;
+  --primary: #176b52;
+  --accent: #eef2ef;
+  --input: #dce2df;
+  --muted-foreground: #76817b;
+  /* Zeminden bir ton ayrılan yüzey; açılır paneller bunu kullanır. */
+  --surface: #f7f9f7;
+  /* Süresi geçen task işaretlemesi. */
+  --late: #c0453c;
+  --late-soft: #fff3f1;
+  --late-border: #e0a9a2;
+  /* En yüksek öncelik: altın sarısı çerçeve ve rozet. */
+  --critical: #b8860b;
+  --critical-soft: #fdf6e3;
+  --critical-border: #d4af37;
+
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-synthesis: none;
+  color-scheme: light;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Koyu tema; `index.html` içindeki betik data-theme'i ilk boyamadan önce yazar. */
+:root[data-theme="dark"] {
+  --background: #121a17;
+  --foreground: #e4ede7;
+  --primary: #237555;
+  --accent: #263b30;
+  --input: #36483e;
+  --muted-foreground: #a6b4ac;
+  /* Yalnızca koyu temada gereken yüzeyler. */
+  --surface: #1b2821;
+  --subtle: #202f27;
+  --green: #83d5b0;
+  --late: #ff9d93;
+  --late-soft: #3a2320;
+  --late-border: #8a4f47;
+  --critical: #f0c454;
+  --critical-soft: #33290f;
+  --critical-border: #a8842c;
+
+  color-scheme: dark;
+}
+
+/* Açık temadaki `* { border-color }` karşılığı; bileşene özel kenar renkleri bunu ezer. */
+:root[data-theme="dark"] * { border-color: var(--input); }

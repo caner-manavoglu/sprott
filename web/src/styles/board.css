@@ -1,0 +1,586 @@
+/* Pano: üst araç çubuğu, kişi filtresi, sütunlar ve task kartları. */
+.task-kind { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; }
+.task-kind > svg { flex-shrink: 0; }
+.task-kind[data-type="bug"] > svg { color: #d96363; }
+.task-kind[data-type="epic"] > svg { color: #a68add; }
+.task-kind[data-type="story"] > svg { color: #62a887; }
+.task-kind[data-type="feature"] > svg { color: #ceac62; }
+.task-parent, .task-relation { color: var(--muted-foreground); font-size: 10px; }
+.task-parent { display: block; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-relation { margin: 9px 0 0 !important; }
+.subtask-list { display: grid; gap: 8px; margin-top: 18px; padding: 14px; border: 1px solid var(--input); border-radius: 9px; }
+.subtask-list > strong { font-size: 11px; }
+.subtask-list > div { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 43px;
+  margin: 0 36px;
+  border-bottom: 1px solid #e6eae5;
+}
+
+.board-toolbar > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+}
+
+.view-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  border-bottom: 2px solid #176b52;
+  color: #176b52;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.task-total {
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #f3f5f1;
+  color: #91998f;
+  font-size: 10px;
+}
+
+.board-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #9ca497;
+}
+
+/* Kişi filtresi: baş harf çipleri, arama düğmesi ve açılır liste. */
+.board-people {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+.people-chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #dce1d3;
+  border-radius: 50%;
+  background: #eaece2;
+  color: #6a7458;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .2px;
+  transition: transform .15s, border-color .15s;
+}
+
+.people-chip:hover {
+  z-index: 1;
+  border-color: #8fb79f;
+  transform: translateY(-1px);
+}
+
+.people-chip.active {
+  border-color: #176b52;
+  background: #176b52;
+  color: #fff;
+}
+
+.people-chip.more {
+  background: #f1f4ef;
+  color: #8a9682;
+  font-size: 9px;
+}
+
+/* Ad, baş harfin üstünde ipucu olarak açılır. */
+.people-name {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  z-index: 5;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #26352e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity .15s;
+}
+
+.people-chip:hover .people-name,
+.people-chip:focus-visible .people-name { opacity: 1; }
+
+.people-search {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px dashed #d5dcd2;
+  border-radius: 50%;
+  background: none;
+  color: #96a08f;
+}
+
+.people-search:hover {
+  border-style: solid;
+  color: #527747;
+}
+
+.people-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  width: 236px;
+  padding: 9px;
+  border: 1px solid #e3e9df;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 34px #26352e1f;
+}
+
+.people-results {
+  display: grid;
+  gap: 2px;
+  max-height: 212px;
+  overflow: auto;
+}
+
+.people-results button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #6d786e;
+  font-size: 11px;
+  text-align: left;
+}
+
+.people-results button:hover { background: #f1f4ef; }
+
+.people-results button.active {
+  background: #e9f1e9;
+  color: #176b52;
+  font-weight: 600;
+}
+
+.people-results .people-chip {
+  width: 23px;
+  height: 23px;
+  font-size: 8px;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 4px 9px;
+  border: 1px solid #dcead8;
+  border-radius: 20px;
+  background: #eef5ec;
+  color: #5d8267;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.board-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 36px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd4ca #f8faf7;
+}
+
+/* Sütun sayısı satır içi `grid-template-columns` ile verilir.
+   `isolation`, yer değiştiren sütunun z-index'ini pano içinde tutar. */
+.board-columns {
+  display: grid;
+  align-items: stretch;
+  gap: 17px;
+  width: 100%;
+  min-height: 100%;
+  padding-bottom: 10px;
+  isolation: isolate;
+}
+
+.kanban-column {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  border: 1px solid #eaf0e6;
+  border-radius: 11px;
+  background: #f5f7f3;
+  transition: background .18s, box-shadow .18s;
+}
+
+.kanban-column.drag-over {
+  background: #e6f0e7;
+  outline: 2px dashed #71a18a;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 58px;
+  padding: 0 15px;
+}
+
+.column-header h2 {
+  max-width: 190px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.column-header > button {
+  margin-left: auto;
+  color: #8b9888;
+}
+
+.column-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.tone-0 { background: #a5ada0; }
+.tone-1 { background: #ceac62; }
+.tone-2 { background: #62a887; }
+.tone-3 { background: #9f91bf; }
+
+.column-count {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #e8ede3;
+  color: #8a9682;
+  font-size: 10px;
+}
+
+.column-body { padding: 0 10px 12px; }
+
+.task-card {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 16px;
+  border: 1px solid #e2e8de;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 3px #31442503;
+  text-align: left;
+  cursor: grab;
+  transition: box-shadow .15s, transform .15s;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 12px #3144250b;
+  transform: translateY(-1px);
+}
+
+.task-card:active { cursor: grabbing; }
+
+.task-card.is-dragging {
+  opacity: .45;
+  transform: scale(.97);
+}
+
+/* Bırakılan kart yeni sütununda kısa bir iniş yapar. */
+.task-card.just-moved { animation: task-land .22s ease-out; }
+
+@keyframes task-land {
+  from { opacity: .4; transform: translateY(-10px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.task-code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #929d8d;
+}
+
+.task-type {
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: #e6f2e9;
+  color: #65a379;
+}
+
+.task-card h3 {
+  margin: 12px 0 7px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.task-card > p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #959e91;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 11px;
+  border-top: 1px solid #f0f2ed;
+  font-size: 9px;
+  color: #aab3a4;
+}
+
+.card-footer > span {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f5f7f1;
+}
+
+.task-assignee {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 65%;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  color: #98a294;
+}
+
+.assignee-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  border: 1px solid #dce1d3;
+  border-radius: 50%;
+  background: #eaece2;
+  color: #6a7458;
+  font-size: 7px;
+  font-weight: 650;
+}
+
+.empty-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 38px 12px 31px;
+  text-align: center;
+  color: #b0baa9;
+}
+
+.empty-column > div {
+  margin-bottom: 13px;
+  padding: 12px;
+  border-radius: 11px;
+  background: #ebf0e6;
+}
+
+.empty-column strong {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8c9982;
+}
+
+.empty-column > span {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.add-task {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 10px 7px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #98a38f;
+  font-size: 11px;
+}
+
+.add-task:hover {
+  background: #eaf0e5;
+  color: #527747;
+}
+
+.board-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 13px 36px 19px;
+  font-size: 9px;
+  color: #a5afa0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card,
+  .kanban-column {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Süresi geçen task: kırmızı çerçeve + bitiş tarihi etiketi.
+   Renkler `tokens.css` içindeki --late değişkenlerinden gelir, iki temada da çalışır. */
+.task-card.overdue {
+  border-color: var(--late-border);
+  box-shadow: inset 2px 0 0 var(--late), 0 2px 3px #31442503;
+}
+
+.task-card.overdue:hover {
+  box-shadow: inset 2px 0 0 var(--late), 0 4px 12px #3144250b;
+}
+
+/* En yüksek öncelik altın sarısı çerçeveyle işaretlenir; gecikme kırmızısının
+   önüne geçer, gecikme bilgisi zaten bitiş tarihi etiketinde görünür. */
+.task-card.critical {
+  border-color: var(--critical-border);
+  box-shadow: inset 3px 0 0 var(--critical-border), 0 2px 3px #31442503;
+}
+
+.task-card.critical:hover {
+  box-shadow: inset 3px 0 0 var(--critical-border), 0 4px 12px #3144250b;
+}
+
+.task-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 550;
+}
+
+.task-due.late {
+  border-color: var(--late-border);
+  background: var(--late-soft);
+  color: var(--late);
+}
+
+/* Tamamlanmış projenin panosu salt okunurdur; araç çubuğundaki uyarı. */
+.board-hint.locked {
+  padding: 3px 8px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--muted-foreground);
+  font-weight: 550;
+}
+
+/* Akış kuralı kapalı hedef sütun: sürükleme sırasında soluklaşır. */
+.kanban-column.drop-blocked { opacity: .45; }
+
+/* Öncelik rozeti: kart alt satırında ve task ayrıntısında aynı görünür. */
+.task-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+}
+
+.task-priority > svg { flex-shrink: 0; }
+.task-priority[data-priority="lowest"] > svg { color: #8fa39a; }
+.task-priority[data-priority="low"] > svg { color: #7fa2c2; }
+.task-priority[data-priority="normal"] > svg { color: #62a887; }
+.task-priority[data-priority="high"] > svg { color: #d98c4a; }
+
+.task-priority[data-priority="highest"] {
+  border-radius: 4px;
+  background: var(--critical-soft);
+  color: var(--critical);
+  font-weight: 600;
+}
+
+.task-priority[data-priority="highest"] > svg { color: var(--critical); }
+
+/* Pano üstündeki öncelik filtresi. */
+.board-priorities {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.priority-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid var(--input);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.priority-chip:hover { border-color: var(--critical-border); }
+
+.priority-chip.active {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.priority-chip[data-priority="highest"].active {
+  border-color: var(--critical-border);
+  background: var(--critical-soft);
+  color: var(--critical);
+}
+
+/* Dar ekranda filtre etiketleri gizlenir, ikonlar kalır. */
+@media (max-width: 900px) {
+  .priority-chip { font-size: 0; padding: 5px; gap: 0; }
+}

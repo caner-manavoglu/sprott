@@ -1,0 +1,164 @@
+/* Kırılma noktaları en sonda durur, böylece üstteki kuralları ezebilirler.
+   Sütun genişliği artık `.board-columns` ızgarasından gelir; burada yalnızca
+   boşluklar ve kenar payları küçülür. */
+
+@media (max-width: 1000px) {
+  .sidebar {
+    width: 190px;
+    padding-inline: 12px;
+  }
+
+  .workspace > svg { display: none; }
+
+  .topbar { padding: 0 25px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 25px;
+  }
+
+  .board-toolbar { margin-inline: 25px; }
+  .board-scroll { padding-inline: 25px; }
+  .board-footer { padding-inline: 25px; }
+  .permissions-panel { margin-inline: 25px; }
+  .dashboard-overview { grid-template-columns: 1fr 220px; }
+  .dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-content { grid-template-columns: 1fr; row-gap: 20px; }
+  .dashboard-section-heading, .dashboard-project-grid, .dashboard-overdue { grid-column: 1; grid-row: auto; }
+}
+
+@media (max-width: 640px) {
+  /* Giriş: tanıtım paneli kalkar, marka formun üstüne taşınır. */
+  .login-layout { display: block; }
+  .login-art { display: none; }
+
+  .login-form {
+    min-height: 100dvh;
+    padding: 80px 25px 35px;
+  }
+
+  .login-mobile-brand {
+    display: block;
+    position: absolute;
+    top: 25px;
+    left: 25px;
+  }
+
+  .login-theme-toggle {
+    top: 24px;
+    right: 24px;
+  }
+
+  /* Kenar çubuğu yalnızca ikon şeridine iner. */
+  .sidebar {
+    width: 65px;
+    padding: 23px 8px 14px;
+  }
+
+  .sidebar > .brand {
+    margin: 0 0 25px;
+    justify-content: center;
+    gap: 0;
+    font-size: 0;
+  }
+
+  .sidebar .brand-dot,
+  .workspace,
+  .nav-label,
+  .sidebar nav button:not(.active) > span,
+  .user-info,
+  .nav-sub,
+  .sidebar nav .nav-toggle { display: none; }
+
+  .sidebar nav button {
+    justify-content: center;
+    gap: 0;
+    padding: 13px 0;
+    font-size: 0;
+  }
+
+  /* Şeritte seçili modülü ayırt etmek için dolgu geri gelir. */
+  .sidebar nav button.active { background: #e9f1e9; }
+  :root[data-theme="dark"] .sidebar nav button.active { background: var(--accent); }
+
+  .sidebar-bottom { flex-direction: column; }
+
+  .topbar {
+    height: 60px;
+    padding: 0 17px;
+  }
+
+  .topbar > div {
+    gap: 4px;
+    font-size: 9px;
+  }
+
+  .topbar-actions .role-pill { display: none; }
+
+  .role-pill {
+    padding: 4px 7px;
+    font-size: 8px;
+  }
+
+  .page-header {
+    gap: 17px;
+    padding: 24px 17px 21px;
+  }
+
+  .page-header h1 { font-size: 23px; }
+
+  .page-header p {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .header-actions button {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .board-toolbar { margin-inline: 17px; }
+  .board-hint { display: none; }
+  .board-scroll { padding: 17px; }
+  .board-columns { gap: 12px; }
+  .board-footer { padding-inline: 17px; }
+  .board-footer > span:last-child { display: none; }
+
+  .permissions-panel { margin-inline: 17px; }
+  .permissions-heading { padding: 17px; }
+  .page-error { margin-inline: 17px; }
+
+  .dashboard-overview { grid-template-columns: 1fr; }
+  .dashboard-overview-copy { padding: 20px; }
+  .dashboard-completion { grid-template-columns: auto 1fr; }
+  .dashboard-donut { width: 100px; height: 100px; }
+  .dashboard-donut:before { width: 76px; height: 76px; }
+  .dashboard-donut strong { font-size: 20px; }
+  .dashboard-metrics { gap: 7px; margin-top: 18px; }
+  .dashboard-metric { padding: 10px; }
+  .dashboard-project-grid { grid-template-columns: 1fr; }
+
+  .field-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Grup modalı dar ekranda tek kolona düşer. */
+@media (max-width: 620px) {
+  .group-picker { grid-template-columns: 1fr; }
+}
+
+/* Günlük filtreleri dar ekranda alt satıra iner. */
+@media (max-width: 1000px) {
+  .permissions-heading { flex-wrap: wrap; }
+  .log-filters { width: 100%; margin-left: 0; }
+  .log-filters > * { width: 100%; }
+}

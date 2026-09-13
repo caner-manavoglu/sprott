@@ -1,0 +1,528 @@
+/* Uygulama kabuğu: solda kenar çubuğu, sağda üst bar + sayfa gövdesi. */
+
+.app-shell {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 224px;
+  padding: 29px 17px 18px;
+  border-right: 1px solid #e6eae6;
+  background: #fafbf9;
+}
+
+.sidebar > .brand {
+  margin-left: 13px;
+  margin-bottom: 35px;
+}
+
+.workspace {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 33px;
+  padding: 11px 9px;
+  border: 1px solid #e4e8e1;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.workspace-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 31px;
+  border: 1px solid #e2e6da;
+  border-radius: 7px;
+  background: #edf0e8;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workspace strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.workspace small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: #92998f;
+}
+
+.nav-label {
+  margin: 0 13px 12px;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  color: #a0a69d;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+
+.sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #747f76;
+  font-size: 12px;
+  text-align: left;
+}
+
+/* Seçili modül dolgusuz vurgulanır: yeşil ikon + kalın yazı. */
+.sidebar nav button.active {
+  background: none;
+  color: #176b52;
+  font-weight: 600;
+}
+
+.sidebar nav button:not(.active):hover {
+  background: #f1f4ef;
+  color: #527747;
+}
+
+/* Projeler satırı: solda modül düğmesi, sağda alt listeyi açan ok. */
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-row > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-stack {
+  display: grid;
+  min-width: 0;
+}
+
+.nav-stack > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-stack > small {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 500;
+  opacity: .75;
+}
+
+.sidebar nav .nav-toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #8b9488;
+}
+
+.sidebar nav .nav-toggle > svg {
+  flex: none;
+  transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sidebar nav .nav-toggle[aria-expanded="false"] > svg { transform: rotate(-90deg); }
+
+.sidebar nav .nav-toggle:hover {
+  background: #eaf0e5;
+  color: #527747;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar nav .nav-toggle > svg { transition: none; }
+}
+
+.sidebar nav button.open {
+  background: none;
+  color: #176b52;
+  font-weight: 600;
+}
+
+/* Proje listesi: ince kılavuz çizgi, nokta işaretçi, seçilide çizgiyi boyayan şerit. */
+.nav-sub {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  margin: 3px 0 8px;
+  padding-left: 28px;
+}
+
+.nav-sub:before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  border-radius: 2px;
+  background: #e6eae2;
+}
+
+.sidebar nav .nav-sub button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #8a938a;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.sidebar nav .nav-sub button > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar nav .nav-sub button:hover {
+  background: #f1f4ef;
+  color: #527747;
+}
+
+.sidebar nav .nav-sub button.active {
+  background: #eef4ec;
+  color: #176b52;
+  font-weight: 600;
+}
+
+.sidebar nav .nav-sub button.active:after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background: #176b52;
+}
+
+.nav-sub-dot {
+  display: block;
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ccd6c9;
+  transition: background .15s, transform .15s;
+}
+
+.sidebar nav .nav-sub button:hover .nav-sub-dot { background: #9fb8a6; }
+
+.sidebar nav .nav-sub button.active .nav-sub-dot {
+  background: #176b52;
+  transform: scale(1.3);
+}
+
+/* Kenar çubuğunun altındaki oturum kartı. */
+.sidebar-bottom {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: auto;
+  padding: 19px 3px 0;
+  border-top: 1px solid #e5e9e3;
+}
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 33px;
+  height: 33px;
+  border: 1px solid #dce1d3;
+  border-radius: 50%;
+  background: #eaece2;
+  color: #6a7458;
+  font-size: 12px;
+}
+
+.user-info { flex: 1; }
+
+.user-info strong {
+  display: block;
+  font-size: 11px;
+}
+
+.user-info small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: #92998f;
+}
+
+/* Sayfa geçişi: içerik ani belirmesin diye kısa bir yumuşama. */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.main-content {
+  animation: page-in 180ms ease-out;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 69px;
+  padding: 0 36px;
+  border-bottom: 1px solid #e9ece8;
+}
+
+.topbar > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 11px;
+  color: #97a098;
+}
+
+.topbar > div span { color: #465148; }
+
+.role-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid #e6eae5;
+  border-radius: 20px;
+  color: #788276;
+  font-size: 9px;
+}
+
+.role-pill > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6ea887;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 35px 36px 31px;
+}
+
+.page-header h1 {
+  margin: 8px 0;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+
+.page-header p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 9px;
+}
+
+.header-actions button {
+  height: 37px;
+  font-size: 11px;
+}
+
+/* Pano dışındaki sayfaların kaydırılabilir gövdesi. */
+.page-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 36px 30px;
+}
+
+/* Tek düğme üst barda aynı konumda kalır; yalnızca aç/kapa ikonu değişir. */
+.sidebar-toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-right: 2px;
+  border: 1px solid #e6eae5;
+  border-radius: 8px;
+  background: none;
+  color: #8b9488;
+}
+
+.sidebar-toggle:hover { background: #f1f4ef; }
+
+.sidebar {
+  transition: width .24s cubic-bezier(.4, 0, .2, 1), padding .24s cubic-bezier(.4, 0, .2, 1);
+}
+
+.app-shell.sidebar-closed .sidebar {
+  width: 0;
+  padding-inline: 0;
+  overflow: hidden;
+  border-right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
+
+/* Bildirimler: üst çubuktaki zil, açılır panel ve sol menüdeki sayaç. */
+.notification-holder { position: relative; }
+
+.notification-button { position: relative; }
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--late);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 60;
+  width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--input);
+  border-radius: 14px;
+  background: var(--background);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 14%);
+  overflow: hidden;
+}
+
+.notification-panel > header,
+.notification-panel > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--input);
+  font-size: 12px;
+}
+
+.notification-panel > footer { border-bottom: 0; border-top: 1px solid var(--input); justify-content: center; }
+
+.notification-list { max-height: 340px; overflow-y: auto; }
+
+.notification-list > button {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--input);
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.notification-list > button:hover { background: var(--accent); }
+.notification-list > button.unread { background: var(--surface); }
+.notification-list > button > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.notification-list strong { font-size: 12px; font-weight: 500; line-height: 1.45; }
+.notification-list small,
+.notification-rows small { font-size: 10px; color: var(--muted-foreground); }
+.notification-empty { padding: 22px 12px; text-align: center; font-size: 12px; color: var(--muted-foreground); }
+
+.notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--primary);
+}
+
+.notification-icon[data-type="completed"] { color: #2f8d5f; }
+.notification-icon[data-type="mention"] { color: #9a6b1f; }
+.notification-icon[data-type="announcement"] { color: #8a4bc4; }
+
+.notification-rows { display: flex; flex-direction: column; }
+
+.notification-rows > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--input);
+}
+
+.notification-rows > li:last-child { border-bottom: 0; }
+.notification-rows > li > div:first-of-type { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.notification-rows > li.unread > div:first-of-type strong { font-weight: 600; }
+.notification-rows strong { font-size: 13px; font-weight: 400; }
+.notification-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--late);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Hareketi azalt tercihinde geçiş animasyonu kapanır. */
+@media (prefers-reduced-motion: reduce) {
+  .main-content { animation: none; }
+}
+
+/* Üst çubuktaki task araması; sonuç paneli bildirim paneliyle aynı görünümü paylaşır. */
+.task-search { position: relative; display: flex; align-items: center; }
+.task-search > svg { position: absolute; left: 10px; color: var(--muted-foreground); pointer-events: none; }
+.task-search input { width: min(240px, 34vw); height: 36px; padding-left: 31px; border-radius: 10px; }
+.task-search .notification-list > button { align-items: center; justify-content: space-between; }

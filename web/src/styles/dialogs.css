@@ -1,0 +1,434 @@
+/* Modal içerikleri: form düzeni, sütun ayarları, task detayı, grup seçici. */
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.task-detail-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.task-detail-primary { display: flex; gap: 8px; }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 12px;
+}
+
+.field-row label,
+.field-row .field { margin-bottom: 19px; }
+
+.confirm-text {
+  align-self: center;
+  margin-right: auto;
+  font-size: 12px;
+  color: #8a9581;
+}
+
+/* Sütun ayarları: sıralama listesi + yeni sütun formu. */
+.column-settings {
+  display: grid;
+  gap: 12px;
+}
+
+.column-edit {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.column-edit input {
+  flex: 1;
+  min-width: 0;
+}
+
+.column-edit button { flex-shrink: 0; }
+
+.new-column-form {
+  margin-top: 6px;
+  padding-top: 20px;
+  border-top: 1px solid #e6eae5;
+}
+
+.new-column-form label { margin-bottom: 12px; }
+
+.column-order {
+  position: relative;
+  display: grid;
+  gap: 12px;
+}
+
+.column-order-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background .18s, box-shadow .18s;
+}
+
+.column-order-row .column-edit {
+  flex: 1;
+  min-width: 0;
+}
+
+.column-drag-handle {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  cursor: grab;
+  touch-action: none;
+}
+
+.column-order-row.is-dragging {
+  border-color: var(--primary);
+  background: var(--accent);
+  box-shadow: 0 3px 12px #0002;
+}
+
+.column-order-row.is-dragging .column-drag-handle {
+  color: var(--foreground);
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .column-order-row {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Task detayı: açıklama, `.reveal` ile yüksekliği canlandırılan bölüm. */
+.task-detail h2 {
+  overflow-wrap: anywhere;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.task-detail .reveal p {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #6d786e;
+}
+
+.task-detail .reveal > div { padding-bottom: 26px; }
+.task-detail .reveal[data-open="false"] > div { padding-bottom: 0; }
+/* Öncelik kendi satırında durur; rozet metnin yanına sıkışmaz. */
+.priority-line { display: flex; align-items: center; gap: 7px; }
+
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows .32s cubic-bezier(.4, 0, .2, 1), opacity .22s ease;
+}
+
+.reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.reveal > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.parent-reveal > div { padding-bottom: 0 !important; }
+
+/* Kapalı bölüm yüksekliği sıfır olsa da tıklanabilir kalıyordu; kapatılır. */
+.reveal:not([data-open="true"]) { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { transition: none; }
+}
+
+/* Yetki modalındaki modül grupları. */
+.permission-group {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ece8;
+}
+
+.permission-group:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.permission-group h3 {
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #8a9581;
+}
+
+.permission-row {
+  padding: 7px 0;
+  font-size: 12px;
+  color: var(--foreground);
+}
+
+/* Grup modalı: üyeler ile yöneticiler yan yana, altta atanmamış kullanıcı havuzu.
+   Kutuların kendi kesikli çerçevesi var; `.permission-group` ayırıcısı burada kapatılır. */
+.group-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.permission-group.drop-zone {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+  padding: 14px;
+  border: 1px dashed #d9dfd6;
+  border-radius: 12px;
+  transition: background-color .12s, border-color .12s;
+}
+
+.permission-group.drop-zone.pool { margin-top: 16px; }
+
+.permission-group.drop-zone.drag-over {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.drop-zone h3 { margin-bottom: 4px; }
+
+.drop-zone > .muted {
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.drop-zone .member-list {
+  min-height: 60px;
+  max-height: 240px;
+  gap: 8px;
+}
+
+.drop-zone .member-row {
+  min-width: 0;
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+.drop-zone .member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.drop-empty {
+  margin: 0;
+  padding: 16px 0;
+  text-align: center;
+}
+
+.member-row[draggable="true"] { cursor: grab; }
+.member-row[draggable="true"]:active { cursor: grabbing; }
+
+.drag-handle {
+  flex-shrink: 0;
+  color: #b3bbab;
+}
+
+.member-row .row-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+/* Task detayındaki tarih satırı. */
+.task-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+/* Task ekleri: form seçimi, detay listesi ve tam ekran görsel önizleme. */
+.attachment-picker { margin-bottom: 19px; }
+.attachment-select,
+.attachment-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.attachment-select {
+  gap: 8px;
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 16px;
+  border: 1px dashed var(--input);
+  border-radius: 9px;
+  color: var(--muted-foreground);
+}
+.attachment-select > svg { flex-shrink: 0; }
+.attachment-select > span { line-height: 1.4; text-align: center; }
+.attachment-select:hover { border-color: var(--primary); color: var(--green); }
+.attachment-select[data-dragging="true"] { border-color: var(--primary); background: var(--accent); color: var(--green); }
+.attachment-select input,
+.attachment-action input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.pending-files { display: grid; gap: 6px; }
+.pending-files > span { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11px; font-weight: 400; }
+.pending-files small { margin-left: auto; color: var(--muted-foreground); }
+.task-attachments { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--input); }
+.attachment-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 12px; }
+.task-attachments > .attachment-select { margin-bottom: 10px; }
+.attachment-empty { display: block; margin-top: 12px; color: var(--muted-foreground); font-size: 11px; }
+.attachment-grid { display: grid; gap: 8px; }
+.attachment-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px; border: 1px solid var(--input); border-radius: 9px; }
+.attachment-thumb,
+.attachment-file,
+.attachment-loading { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 42px; border: 0; border-radius: 7px; background: var(--subtle); color: var(--muted-foreground); overflow: hidden; }
+.attachment-thumb { padding: 0; }
+.attachment-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.attachment-info { display: grid; flex: 1; min-width: 0; gap: 2px; font-size: 11px; }
+.attachment-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-info small { color: var(--muted-foreground); }
+.attachment-actions { display: flex; align-items: center; }
+.attachment-actions button,
+.attachment-action { width: 28px; height: 28px; color: var(--muted-foreground); }
+.attachment-action:hover,
+.attachment-actions button:hover { color: var(--green); }
+.attachment-preview { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: #07100cde; }
+.attachment-preview > div { display: grid; grid-template-rows: auto minmax(0, 1fr); max-width: min(1100px, 100%); max-height: 100%; border: 1px solid var(--input); border-radius: 13px; background: var(--surface); overflow: hidden; }
+.attachment-preview-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 12px; font-size: 12px; }
+.attachment-preview-bar > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-preview-bar > div { display: flex; gap: 6px; }
+.attachment-preview > div > img { display: block; max-width: 100%; max-height: calc(100dvh - 110px); object-fit: contain; background: #070b09; }
+
+/* Task yorumları ve @proje-üyesi önerileri. */
+.task-comments { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--input); }
+.comments-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.comments-heading strong { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+.comments-heading > span { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 11px; background: var(--subtle); color: var(--muted-foreground); font-size: 10px; }
+.comment-list { display: grid; gap: 10px; }
+.comment-empty { margin: 0 0 14px; color: var(--muted-foreground); font-size: 11px; }
+.task-comment { padding: 12px; border: 1px solid var(--input); border-radius: 10px; }
+.task-comment > header { display: flex; align-items: center; gap: 9px; }
+.comment-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--green); font-size: 9px; font-weight: 700; }
+.task-comment > header > div:not(.comment-actions) { display: grid; gap: 2px; }
+.task-comment > header strong { font-size: 11px; }
+.task-comment time,
+.comment-edited { color: var(--muted-foreground); font-size: 9px; }
+.comment-actions { display: flex; margin-left: auto; }
+.comment-actions button { width: 28px; height: 28px; color: var(--muted-foreground); }
+.task-comment > p { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--foreground); font-size: 12px; line-height: 1.6; }
+.task-comment mark { border-radius: 4px; background: var(--accent); color: var(--green); }
+.comment-edited { display: block; margin-top: 5px; }
+.comment-edit { display: grid; gap: 8px; margin-top: 10px; }
+.comment-edit > div:last-child { display: flex; justify-content: flex-end; gap: 6px; }
+/* Düzenleme modunda dosya seçimi; besteci alanıyla aynı görünüm. */
+.comment-edit .attachment-select { min-height: 46px; background: var(--surface); }
+.pending-files > span > button { display: grid; place-items: center; flex-shrink: 0; padding: 2px; border: 0; border-radius: 5px; background: none; color: var(--muted-foreground); }
+.pending-files > span > button:hover { background: var(--accent); color: var(--foreground); }
+.pending-files small + button { margin-left: 4px; }
+/* Kaydedilmiş ekin kaldırma düğmesi yalnızca düzenleme modunda görünür. */
+.comment-attachments > div { position: relative; }
+.comment-attachment-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 6px; background: var(--background); color: var(--late); box-shadow: 0 1px 4px #0004; }
+.comment-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; }
+.comment-attachments > div { min-width: 0; padding: 6px; border: 1px solid var(--input); border-radius: 8px; }
+.comment-attachments .attachment-thumb,
+.comment-attachments .attachment-file { width: 100%; height: 72px; }
+.comment-download { display: flex; align-items: center; justify-content: space-between; gap: 5px; width: 100%; margin-top: 5px; padding: 2px; border: 0; background: none; color: var(--muted-foreground); font-size: 9px; }
+.comment-download span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comment-download svg { flex-shrink: 0; }
+/* Yorum yazma alanı kapalı başlar; yalnızca başlık satırı yer kaplar. */
+.comment-composer { margin-top: 14px; padding: 12px; border-radius: 10px; background: var(--subtle); }
+.composer-body { display: grid; gap: 11px; padding-top: 11px; }
+.composer-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: var(--foreground); font-size: 11px; cursor: pointer; }
+.composer-toggle > svg:last-child { margin-left: auto; transition: transform .3s; }
+.composer-toggle[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+/* Açılma bitince taşma serbest kalır; @ önerileri kutunun dışına çıkabilsin. */
+.composer-reveal[data-open="true"][data-settled="true"] > div { overflow: visible; }
+/* Task detayındaki diğer `.reveal` bölümlerinin alt boşluğu buraya uymuyor. */
+.task-detail .composer-reveal > div { padding-bottom: 0; }
+.composer-body > button { justify-self: end; }
+.comment-composer .attachment-select { min-height: 46px; background: var(--surface); }
+.mention-input { position: relative; }
+.mention-input textarea { min-height: 82px; background: var(--surface); }
+.mention-suggestions { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 20; padding: 5px; border: 1px solid var(--input); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 28px #0003; }
+.mention-suggestions button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px; border: 0; border-radius: 7px; background: none; color: var(--foreground); text-align: left; }
+.mention-suggestions button:hover { background: var(--accent); }
+.mention-suggestions button > span { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: var(--subtle); color: var(--green); font-size: 8px; }
+.mention-suggestions button > div { display: grid; gap: 1px; }
+.mention-suggestions strong { font-size: 10px; }
+.mention-suggestions small { color: var(--muted-foreground); font-size: 9px; }
+
+.task-dates > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--accent);
+}
+
+.task-dates > span.late {
+  border-color: var(--late-border);
+  background: var(--late-soft);
+  color: var(--late);
+  font-weight: 550;
+}
+
+/* Modal açılış/kapanış animasyonu. Radix `data-state` yazar ve kapanışta
+   animasyon bitene kadar içeriği DOM'da tutar.
+   Ortalama Tailwind'in `translate` özelliğiyle yapılıyor; kare adımları
+   bu yüzden yalnızca `scale` ve `opacity` kullanır — `transform` yazmak
+   translate'in üstüne biner ve modalı sol üste kaydırır. */
+.dialog-overlay[data-state="open"] { animation: overlay-in .2s ease-out; }
+.dialog-overlay[data-state="closed"] { animation: overlay-out .16s ease-in; }
+.dialog-panel[data-state="open"] { animation: dialog-in .24s cubic-bezier(.16, 1, .3, 1); }
+.dialog-panel[data-state="closed"] { animation: dialog-out .16s ease-in; }
+
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlay-out { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes dialog-in {
+  from { opacity: 0; scale: .96; }
+  to { opacity: 1; scale: 1; }
+}
+
+@keyframes dialog-out {
+  from { opacity: 1; scale: 1; }
+  to { opacity: 0; scale: .98; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-overlay,
+  .dialog-panel { animation: none !important; }
+}
+
+/* Onay modalındaki soru satırı. */
+.confirm-question {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+/* Akış kuralları matrisi: satır kaynak sütun, sütun hedef sütun. */
+.workflow-grid table { width: 100%; }
+.workflow-grid th, .workflow-grid td { text-align: center; white-space: nowrap; }
+.workflow-grid th:first-child, .workflow-grid td:first-child { text-align: left; }
+.workflow-grid input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.workflow-grid input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .5; }

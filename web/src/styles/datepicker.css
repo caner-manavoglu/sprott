@@ -1,0 +1,161 @@
+/* Tarih seçici. Renkler yalnızca tema değişkenlerinden gelir, bu yüzden
+   açık ve koyu temada ayrı kurala gerek kalmaz. */
+
+.datepicker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--input);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  text-align: left;
+}
+
+.datepicker-trigger > svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.datepicker-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datepicker-trigger.empty > span { color: var(--muted-foreground); }
+
+.datepicker-trigger:hover { border-color: var(--primary); }
+.datepicker-trigger[aria-expanded="true"] { border-color: var(--primary); }
+.datepicker-trigger:disabled { opacity: .5; }
+
+/* Panel modalın kaydırılan gövdesi içinde açılır. Kayan konumlandırma yerine
+   akış içinde yer kaplar: modalın `overflow: auto` kenarı takvimi kırpmaz ve
+   panele tıklamak modalı kapatmaz. */
+.datepicker-panel {
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid var(--input);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.datepicker-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.datepicker-panel header strong {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.datepicker-panel header button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted-foreground);
+}
+
+.datepicker-panel header button:hover {
+  background: var(--accent);
+  color: var(--primary);
+}
+
+.datepicker-weekdays,
+.datepicker-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.datepicker-weekdays {
+  margin-bottom: 4px;
+}
+
+.datepicker-weekdays span {
+  padding: 4px 0;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  text-align: center;
+}
+
+.datepicker-days button {
+  height: 31px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  color: var(--foreground);
+  font-size: 12px;
+  transition: background .12s, color .12s;
+}
+
+.datepicker-days button:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--primary);
+}
+
+/* Görünen ayın dışındaki günler soluk kalır; sınır dışı günler kapanır. */
+.datepicker-days button.outside { color: var(--muted-foreground); opacity: .55; }
+
+.datepicker-days button:disabled {
+  color: var(--muted-foreground);
+  opacity: .3;
+  cursor: default;
+}
+
+.datepicker-days button.today:not(.selected) { border-color: var(--input); }
+
+.datepicker-days button.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.datepicker-panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--input);
+}
+
+.datepicker-panel footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.datepicker-panel footer button:hover { background: var(--accent); }
+.datepicker-panel footer button:disabled { color: var(--muted-foreground); opacity: .5; }
+.datepicker-panel footer button.clear { margin-left: auto; color: var(--muted-foreground); }
+
+@media (prefers-reduced-motion: reduce) {
+  .datepicker-days button { transition: none; }
+}
