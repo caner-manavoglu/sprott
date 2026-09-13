@@ -660,8 +660,42 @@ td {
 .pr-card > footer { display: flex; align-items: center; gap: 10px; font-size: 10px; color: var(--muted-foreground); }
 .pr-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* PR diyaloğundaki task seçici. */
+/* PR diyaloğundaki task seçici: kapalı başlar, DatePicker ile aynı görünüm. */
 .pr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+
+.pr-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--input);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pr-picker-trigger > svg:first-child { flex-shrink: 0; color: var(--muted-foreground); }
+.pr-picker-trigger > svg:last-child { flex-shrink: 0; margin-left: auto; opacity: .6; transition: transform .3s; }
+.pr-picker-trigger[aria-expanded="true"] { border-color: var(--primary); }
+.pr-picker-trigger[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.pr-picker-trigger:hover { border-color: var(--primary); }
+.pr-picker-trigger:disabled { opacity: .5; cursor: default; }
+.pr-picker-trigger > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-picker-trigger > span.empty { color: var(--muted-foreground); }
+
+.pr-picker-panel {
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
 .pr-task-search { display: flex; align-items: center; gap: 7px; color: var(--muted-foreground); }
 .pr-task-list { display: grid; gap: 3px; max-height: 190px; overflow-y: auto; margin-top: 7px; }
 .pr-task-list button {
