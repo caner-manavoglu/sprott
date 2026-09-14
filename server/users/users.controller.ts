@@ -1,7 +1,9 @@
-import { BadRequestException, Body, Controller, Delete, Get, Inject, NotFoundException, Param, Patch, Post, Query, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Delete, Get, Inject, NotFoundException, Param, Patch, Post, Query, Req, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { MANAGED_GROUPS, Store, emailField, hash, idField, passwordField, textField } from '../store.ts';
-import { type AuthRequest, allow } from '../common/auth.ts';
+import { type AuthRequest, allow, current } from '../common/auth.ts';
 import { usersSchema } from '../common/schemas.ts';
 import { editUserSchema, newUserSchema } from './users.schemas.ts';
 
@@ -15,7 +17,7 @@ export class UsersController {
   // ILIKE büyük/küçük harf duyarsızdır; ad, soyad, tam ad ve e-posta üzerinde arar.
   // `managedGroups` gruplardan türediği için grup yöneticisi etiketi listeyle birlikte tazelenir.
   private async list(search?: unknown) {
-    const columns = `u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions, ${MANAGED_GROUPS} AS "managedGroups"`;
+    const columns = `u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar", ${MANAGED_GROUPS} AS "managedGroups"`;
     const term = typeof search === 'string' ? search.trim() : '';
     if (!term) return (await this.store.db.query(`SELECT ${columns} FROM users u ORDER BY u.id`)).rows;
     const pattern = `%${term.replace(/[\\%_]/g, character => `\\${character}`)}%`;
@@ -43,6 +45,28 @@ export class UsersController {
   @ApiResponse({status: 200, schema: usersSchema})
   @ApiQuery({name: 'search', required: false, description: 'Ad, soyad veya e-postada büyük/küçük harf duyarsız arama.', example: 'caner'})
   @Get() index(@Req() req: AuthRequest, @Query('search') search?: string) { allow(req, 'user.view'); return this.list(search); }
+  @Get(':id/avatar') async avatar(@Param('id') rawId: string, @Res() response: Response) {
+    const avatar = (await this.store.db.query('SELECT "avatarMimeType","avatarContent" FROM users WHERE id=$1', [idField(rawId)])).rows[0];
+    if (!avatar?.avatarContent) throw new NotFoundException('Profil fotoğrafı bulunamadı.');
+    response.type(avatar.avatarMimeType).send(avatar.avatarContent);
+  }
+  @ApiOperation({summary: 'Kendi e-posta, şifre ve profil fotoğrafını güncelle'})
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('avatar', {limits: {fileSize: 5 * 1024 * 1024}}))
+  @Patch('me') async me(@Req() req: AuthRequest, @Body() body: Record<string, unknown>, @UploadedFile() file?: {mimetype: string; buffer: Buffer}) {
+    const user = current(req), email = emailField(body.email);
+    const password = body.password === undefined || body.password === '' ? null : hash(passwordField(body.password));
+    const removeAvatar = body.removeAvatar === 'true';
+    if (body.removeAvatar !== undefined && !['true', 'false'].includes(String(body.removeAvatar))) throw new BadRequestException('Fotoğraf kaldırma değeri geçersiz.');
+    if (file && !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) throw new BadRequestException('Fotoğraf JPG, PNG, WebP veya GIF olmalı.');
+    await this.guard(() => this.store.db.query(
+      `UPDATE users SET email=$1,password=COALESCE($2,password),
+        "avatarMimeType"=CASE WHEN $3 THEN NULL ELSE COALESCE($4,"avatarMimeType") END,
+        "avatarContent"=CASE WHEN $3 THEN NULL ELSE COALESCE($5,"avatarContent") END WHERE id=$6`,
+      [email, password, removeAvatar, file?.mimetype ?? null, file?.buffer ?? null, user.id],
+    ));
+    return (await this.store.db.query(`SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar", ${MANAGED_GROUPS} AS "managedGroups" FROM users u WHERE id=$1`, [user.id])).rows[0];
+  }
   @ApiOperation({summary: 'Kullanıcı oluştur (user.create yetkisi)'})
   @ApiBody({schema: newUserSchema})
   @ApiResponse({status: 400, description: 'Geçersiz istek.'})

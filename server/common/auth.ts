@@ -13,6 +13,7 @@ export const token = (req: Request) => {
 export function current(req: AuthRequest) { if (!req.user) throw new UnauthorizedException('Lütfen giriş yapın.'); return req.user; }
 export function admin(req: AuthRequest) { if (current(req).role !== 'admin') throw new ForbiddenException('Bu işlem için yönetici yetkisi gerekli.'); }
 export const permissionLabels: Record<Permission, string> = {
+  'forum.view': 'Forum görüntüleme ve katılma', 'forum.create': 'Forum oluşturma', 'forum.update': 'Forum güncelleme', 'forum.delete': 'Forum silme',
   'project.view': 'Proje görüntüleme', 'project.create': 'Proje oluşturma', 'project.update': 'Proje düzenleme', 'project.delete': 'Proje silme',
   'task.view': 'Task görüntüleme', 'task.create': 'Task oluşturma', 'task.update': 'Task güncelleme', 'task.delete': 'Task silme',
   'user.view': 'Kullanıcı görüntüleme', 'user.create': 'Kullanıcı oluşturma', 'user.update': 'Kullanıcı güncelleme', 'user.delete': 'Kullanıcı silme',

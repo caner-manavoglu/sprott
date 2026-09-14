@@ -32,3 +32,15 @@ export const taskSearchSchema: SchemaObject = {
     projectId: id, projectName: {type: 'string', example: 'Mobil uygulama'},
   }},
 };
+
+export const myTasksSchema: SchemaObject = {
+  type: 'array', description: 'Oturumdaki kullanıcıya atanmış, henüz tamamlanmamış task’lar; teslim tarihi yakın olan üstte.',
+  items: {type: 'object', required: ['id', 'title', 'columnId', 'projectId'], properties: {
+    id, title: {type: 'string', example: 'Giriş ekranını hazırla'},
+    type: taskTypeSchema, priority: taskPrioritySchema,
+    startDate: {type: 'string', nullable: true, example: '2026-01-05'},
+    dueDate: {type: 'string', nullable: true, example: '2026-01-12'},
+    columnId: id, columnName: {type: 'string', example: 'Yapılacak'},
+    projectId: id, projectName: {type: 'string', example: 'Mobil uygulama'},
+  }},
+};

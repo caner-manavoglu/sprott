@@ -4,6 +4,7 @@ import { Button, DatePicker, Input, Textarea } from '../ui';
 import { DialogActions, DialogShell } from './shell';
 import { fullName, roleLabel } from '../../lib/format';
 import type { Project, User } from '../../lib/types';
+import { Avatar } from '../avatar';
 
 export type ProjectDraft = 'new' | Project;
 
@@ -61,7 +62,7 @@ export function ProjectMembersDialog({project, members, everyone, busy, error, o
     <p className="field-label">Proje üyeleri ({members.length})</p>
     <div className="member-list">
       {members.map(person => <div className="member-row" key={person.id}>
-        <span className="user-avatar">{person.name[0]}</span>
+        <Avatar person={person}/>
         <div className="member-info"><strong>{fullName(person)}</strong><small>{person.title || person.email}</small></div>
         <span className={`person-role ${person.role}`}>{roleLabel(person.role)}</span>
         <Button type="button" variant="ghost" size="icon" aria-label={`${fullName(person)} üyeliğini kaldır`}
@@ -73,7 +74,7 @@ export function ProjectMembersDialog({project, members, everyone, busy, error, o
     <p className="field-label">Eklenebilecek kullanıcılar</p>
     <div className="member-list">
       {candidates.map(person => <div className="member-row" key={person.id}>
-        <span className="user-avatar">{person.name[0]}</span>
+        <Avatar person={person}/>
         <div className="member-info"><strong>{fullName(person)}</strong><small>{person.title || person.email}</small></div>
         <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => onAdd(person)}>
           <UserPlus size={15}/> Ekle

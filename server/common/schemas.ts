@@ -15,6 +15,7 @@ export const userSchema: SchemaObject = {
     id, name: {type: 'string', example: 'Ayşe'}, surname: {type: 'string', example: 'Yılmaz'}, title: {type: 'string', example: 'Yazılım uzmanı'},
     email: {type: 'string', format: 'email', example: 'personel@sprott.local'},
     role: {type: 'string', enum: ['admin', 'user']},
+    hasAvatar: {type: 'boolean', example: false},
     permissions: {type: 'object', additionalProperties: {type: 'boolean'}, description: 'Yalnızca açık yetkiler tutulur; yöneticiler tüm yetkilere sahiptir.', example: {'task.view': true, 'task.create': true}},
     managedGroups: {
       type: 'array', items: {type: 'string', example: 'Mobil ekibi'},

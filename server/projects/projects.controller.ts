@@ -118,7 +118,7 @@ export class ProjectsController {
   }
   private async memberList(projectId: number) {
     return (await this.store.db.query(
-      'SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions FROM users u JOIN project_members m ON m."userId"=u.id WHERE m."projectId"=$1 ORDER BY u.id',
+      'SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar" FROM users u JOIN project_members m ON m."userId"=u.id WHERE m."projectId"=$1 ORDER BY u.id',
       [projectId])).rows;
   }
   @ApiOperation({summary: 'Projeye üye ekle (project.update yetkisi)'})

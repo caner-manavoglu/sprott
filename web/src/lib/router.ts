@@ -18,13 +18,28 @@ function subscribe(listener: () => void) {
 }
 
 export function navigate(path: string, {replace = false} = {}) {
-  if (path === location.pathname) return;
+  if (path === location.pathname + location.search) return;
   history[replace ? 'replaceState' : 'pushState'](null, '', path);
   notify();
 }
 
 export function usePath() {
   return useSyncExternalStore(subscribe, () => location.pathname);
+}
+
+/** Adresin sorgu kısmı; filtreler burada yaşadığı için bağlantı paylaşılabilir ve yenilemede korunur. */
+export function useSearch() {
+  return useSyncExternalStore(subscribe, () => location.search);
+}
+
+/** Tek sorgu parametresini yazar; boş değer parametreyi siler. Geçmişe yeni kayıt eklemez. */
+export function setParam(key: string, value: string) {
+  const params = new URLSearchParams(location.search);
+  if (value) params.set(key, value);
+  else params.delete(key);
+  const query = params.toString();
+  history.replaceState(null, '', location.pathname + (query ? `?${query}` : ''));
+  notify();
 }
 
 /** '/projeler/12' → ['projeler', '12'] */

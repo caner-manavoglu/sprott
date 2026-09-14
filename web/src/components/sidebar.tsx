@@ -1,13 +1,13 @@
-import { BarChart3, Bell, Boxes, ChevronDown, FolderKanban, GitPullRequest, Home, LogOut, Megaphone, ScrollText, ShieldCheck, Users } from 'lucide-react';
-import { Button } from './ui';
+import { BarChart3, Bell, Boxes, ChevronDown, CircleUserRound, FolderKanban, GitPullRequest, Home, ListChecks, LogOut, Megaphone, MessageCircle, ScrollText, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Plug } from 'lucide-react';
 import { McpDialog } from './dialogs/mcp-dialog';
 import { Brand } from './brand';
 import { navigate, paths } from '../routes';
 import type { PageKey } from '../routes';
-import { fullName, roleLabel } from '../lib/format';
+import { allowed, fullName, roleLabel } from '../lib/format';
 import type { Board, Project, User } from '../lib/types';
+import { Avatar } from './avatar';
 
 type Permissions = {projects: boolean; users: boolean; groups: boolean; logs: boolean; prs: boolean; admin: boolean};
 
@@ -29,6 +29,7 @@ type Props = {
 /** Sol gezinme: sayfa bağlantıları ve açılır proje listesi. */
 export function Sidebar({open, user, page, board, projects, can, unread, busy, projectsOpen, onToggleProjects, onLogout}: Props) {
   const [mcpOpen, setMcpOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const link = (target: PageKey, path: string, icon: React.ReactNode, label: string) =>
     <button className={page === target ? 'active' : ''} onClick={() => navigate(path)}>{icon} {label}</button>;
 
@@ -41,6 +42,8 @@ export function Sidebar({open, user, page, board, projects, can, unread, busy, p
     <span className="nav-label">ÇALIŞMA ALANI</span>
     <nav>
       {link('dashboard', paths.dashboard, <Home size={18}/>, 'Özet')}
+      {link('myTasks', paths.myTasks, <ListChecks size={18}/>, 'İşlerim')}
+      {allowed(user, 'forum.view') && link('forums', paths.forums, <MessageCircle size={18}/>, 'Forum / Toplantı Notları')}
 
       {can.projects && <>
         <div className="nav-row">
@@ -80,9 +83,17 @@ export function Sidebar({open, user, page, board, projects, can, unread, busy, p
       <button type="button" aria-label="MCP bağlantısı" title="MCP bağlantısı" aria-haspopup="dialog" aria-expanded={mcpOpen} onClick={() => setMcpOpen(true)}><Plug size={18}/> MCP bağlantısı</button>
     </nav>
     <div className="sidebar-bottom">
-      <div className="user-avatar">{user.name[0]}</div>
-      <div className="user-info"><strong>{fullName(user)}</strong><small>{user.title || roleLabel(user.role)}</small></div>
-      <Button variant="ghost" size="icon" aria-label="Çıkış yap" disabled={busy} onClick={onLogout}><LogOut size={17}/></Button>
+      <div className="account-menu">
+        {accountOpen && <div className="account-popover">
+          <button type="button" onClick={() => {setAccountOpen(false); navigate(paths.profile);}}><CircleUserRound size={17}/> Profil</button>
+          <button type="button" disabled={busy} onClick={onLogout}><LogOut size={17}/> Çıkış yap</button>
+        </div>}
+        <button type="button" className="profile-link" aria-label="Hesap menüsünü aç" aria-expanded={accountOpen}
+          onClick={() => setAccountOpen(value => !value)}><Avatar person={user}/>
+          <span className="user-info"><strong>{fullName(user)}</strong><small>{user.title || roleLabel(user.role)}</small></span>
+          <ChevronDown className="account-chevron" size={16}/>
+        </button>
+      </div>
     </div>
   </aside>{mcpOpen && <McpDialog onClose={() => setMcpOpen(false)}/>}</>;
 }

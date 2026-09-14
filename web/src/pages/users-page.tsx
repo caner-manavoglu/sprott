@@ -2,6 +2,7 @@ import { LockKeyhole, Pencil, Trash2, UserCog, UserPlus, Users } from 'lucide-re
 import { Button, Input } from '../components/ui';
 import { fullName, roleLabel } from '../lib/format';
 import type { User } from '../lib/types';
+import { Avatar } from '../components/avatar';
 
 type Props = {
   users: User[];
@@ -29,7 +30,7 @@ export function UsersPage({users, currentUser, search, busy, canUpdate, canDelet
       <tbody>
         {users.map(person => <tr key={person.id}>
           <td><div className="person">
-            <span className="user-avatar">{person.name[0]}</span>
+            <Avatar person={person}/>
             <div><strong>{fullName(person)}</strong><small>{person.title}</small></div>
           </div></td>
           <td>{person.title}</td>

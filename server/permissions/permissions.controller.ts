@@ -18,7 +18,7 @@ export class PermissionsController {
     admin(req);
     // Yönettiği gruplar, grup raporu yetkisinin kime gösterileceğini belirler.
     return (await this.store.db.query(`
-      SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,
+      SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar",
         ${MANAGED_GROUPS} AS "managedGroups"
       FROM users u ORDER BY u.id`)).rows;
   }

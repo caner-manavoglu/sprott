@@ -1,7 +1,8 @@
 import { AlertTriangle, BarChart3, CheckCircle2, LockKeyhole } from 'lucide-react';
 import { Button } from '../components/ui';
-import { dateLabel, fullName, initials } from '../lib/format';
+import { dateLabel, fullName } from '../lib/format';
 import type { Report, ReportDetail } from '../lib/types';
+import { Avatar } from '../components/avatar';
 
 const footnote = <div className="permissions-foot">
   <LockKeyhole size={14}/> Tamamlanan task, her projenin son sütunundaki task’lardır. Atanan task, kişiye şu anda atanmış tüm task’lardır. Atanan bug, tüm sütunlarda şu anda kişiye atanmış bug sayısıdır; tamamlanan bug’lar da dahildir.
@@ -87,7 +88,7 @@ export function ReportsPage({report, busy, onOpenPerson}: {report: Report | null
       <tbody>
         {report?.rows.map(row => <tr key={row.id}>
           <td><div className="person">
-            <span className="user-avatar">{initials(row)}</span>
+            <Avatar person={row}/>
             <div><strong>{fullName(row)}</strong><small>{row.title}</small></div>
           </div></td>
           <td>{row.title}</td>

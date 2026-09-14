@@ -22,6 +22,7 @@ import { ConfirmDialog, type Confirmation } from './components/dialogs/confirm-d
 import { UserDialog, type UserDraft } from './components/dialogs/user-dialog';
 import { BoardPage } from './pages/board-page';
 import { DashboardPage } from './pages/dashboard-page';
+import { MyTasksPage } from './pages/my-tasks-page';
 import { GroupsPage } from './pages/groups-page';
 import { PermissionsPage } from './pages/permissions-page';
 import { ProjectsPage } from './pages/projects-page';
@@ -29,12 +30,14 @@ import { LogsPage } from './pages/logs-page';
 import { ReportDetailPage, ReportsPage } from './pages/reports-page';
 import { AddUserButton, UsersPage } from './pages/users-page';
 import { NotificationsPage } from './pages/notifications-page';
+import { ProfilePage } from './pages/profile-page';
+import { ForumsPage } from './pages/forums-page';
 import { AnnouncementReportPage, AnnouncementsPage } from './pages/announcements-page';
 import { AnnouncementDialog, type AnnouncementDraft } from './components/dialogs/announcement-dialog';
 import { allowed, roleLabel } from './lib/format';
 import { useAsync } from './lib/use-async';
 import { emptyBoard, emptyPullRequests, emptyFeed } from './lib/types';
-import type { ActivityLog, Announcement, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, LinkableTask, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
+import type { ActivityLog, Announcement, MyTask, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, LinkableTask, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
 import { headingFor, matchRoute, navigate, pageTitles, paths, usePath } from './routes';
 
 export function App() {
@@ -78,6 +81,7 @@ export function App() {
   const [mandatory, setMandatory] = useState<Announcement[]>([]);
 
   // Açık modallar.
+  const [myTasks, setMyTasks] = useState<MyTask[]>([]);
   const [pullRequests, setPullRequests] = useState<PullRequestFeed>(emptyPullRequests);
   /** PR ekranının proje süzgeci; null "tüm projeler" demektir ve varsayılandır. */
   const [prProject, setPrProject] = useState<number | null>(null);
@@ -188,6 +192,10 @@ export function App() {
       try {
         do {
           rerun = false;
+          if (allowed(user, 'forum.view')) {
+            const delivered = await api<{id: number}[]>('forums/deliveries');
+            if (!cancelled && delivered.length) await api('forums/receipts', 'POST', {ids: delivered.map(message => message.id), kind: 'delivered'});
+          }
           if (route.page === 'board') {
             const next = await api<Board>(`projects/${route.projectId}/board`);
             if (!cancelled) setBoard(next);
@@ -204,7 +212,10 @@ export function App() {
     };
     const unsubscribe = subscribeLive(() => {void sync();});
     return () => {cancelled = true; unsubscribe();};
-  }, [user?.id, path]);
+  }, [user?.id, path, allowed(user, 'forum.view')]);
+
+  /** Pano verisi projeye bağlıdır; adresteki task kimliği değişince yeniden çekilmez. */
+  const dataKey = route.page === 'board' ? `board:${route.projectId}` : path;
 
   // Adres değişince o sayfanın verisi çekilir; yenile ve geri/ileri de aynı yoldan geçer.
   useEffect(() => {
@@ -224,6 +235,9 @@ export function App() {
           setAnnouncements(news);
           break;
         }
+        case 'myTasks':
+          setMyTasks(await api<MyTask[]>('tasks/mine'));
+          break;
         case 'projects':
           setProjects(await api<Project[]>('projects'));
           setProjectsOpen(true);
@@ -282,7 +296,12 @@ export function App() {
           break;
       }
     });
-  }, [user?.id, path]);
+  }, [user?.id, dataKey]);
+
+  // Adres task'sız kaldığında (geri tuşu, dialog kapatma) detay da kapanır.
+  useEffect(() => {
+    if (route.page === 'board' && route.taskId === null) setOpenTask(null);
+  }, [path]);
 
   // Kullanıcı listesindeki arama sunucuya bırakılır; uç ILIKE ile ad, soyad ve e-postada arar.
   useEffect(() => {
@@ -375,9 +394,16 @@ export function App() {
   /** Son sütun "tamamlandı" sayılır; gecikme ve rapor tanımıyla aynı kural. */
   const isFinalColumn = (columnId: number) => board.columns[board.columns.length - 1]?.id === columnId;
 
+  /** Detay kapanırken adres de panoya döner; açık task adres çubuğunda yaşar. */
+  const closeTask = () => {
+    setOpenTask(null);
+    // Pano filtreleri sorgu dizesinde yaşadığı için detay açılıp kapanırken korunur.
+    if (route.page === 'board' && route.taskId !== null) navigate(paths.board(route.projectId) + location.search, {replace: true});
+  };
+
   const moveTask = (taskId: number, columnId: number) => void run(async () => {
     setBoard(await api<Board>(`tasks/${taskId}`, 'PATCH', {columnId}));
-    setOpenTask(null);
+    closeTask();
     setPrWarning(null);
   });
 
@@ -483,6 +509,13 @@ export function App() {
           onOpen={id => navigate(paths.board(id))}/>
       </div>}
 
+      {route.page === 'myTasks' && <div className="page-body"><MyTasksPage tasks={myTasks}/></div>}
+      {route.page === 'forums' && <div className="page-body"><ForumsPage user={user}/></div>}
+
+      {route.page === 'profile' && <div className="page-body"><ProfilePage user={user} busy={busy} onSave={body => void run(async () => {
+        setUser({...await api<User>('users/me', 'PATCH', body), avatarVersion: Date.now()});
+      })}/></div>}
+
       {route.page === 'projects' && <div className="page-body">
         <ProjectsPage projects={projects} busy={busy} canUpdate={can.updateProject} canDelete={can.deleteProject}
           onToggleComplete={project => ask(project.completedAt
@@ -527,7 +560,7 @@ export function App() {
       {route.page === 'board' && <BoardPage board={board} members={members} busy={busy} locked={boardLocked}
         canCreate={can.createTask} canUpdate={can.updateTask} isAdmin={!!isAdmin}
         onAddTask={columnId => {setError(''); setTaskDraft(columnId);}}
-        onOpenTask={task => {setError(''); setOpenTask(task);}}
+        onOpenTask={task => {setError(''); setOpenTask(task); navigate(paths.boardTask(route.projectId, task.id) + location.search);}}
         onMove={requestMove}/>}
 
       {route.page === 'permissions' && <PermissionsPage people={people} definitions={definitions} busy={busy}
@@ -661,10 +694,7 @@ export function App() {
 
     <TaskDetailDialog task={openTask} board={board} members={members} currentUser={user} busy={busy} error={error}
       canUpdate={can.updateTask} canDelete={can.deleteTask}
-      onClose={() => {
-        setOpenTask(null);
-        if (route.page === 'board' && route.taskId !== null) navigate(paths.board(route.projectId), {replace: true});
-      }}
+      onClose={closeTask}
       onSave={values => void run(async () => {
         const next = await api<Board>(`tasks/${openTask!.id}`, 'PATCH', values);
         setBoard(next);
@@ -673,7 +703,7 @@ export function App() {
       onMove={columnId => requestMove(openTask!.id, columnId)}
       onDelete={() => void run(async () => {
         setBoard(await api<Board>(`tasks/${openTask!.id}`, 'DELETE'));
-        setOpenTask(null);
+        closeTask();
       })}
       onAddAttachments={files => void run(async () => {
         const next = await api<Board>(`tasks/${openTask!.id}/attachments`, 'POST', fileBody(files));

@@ -6,7 +6,7 @@ import { basename } from 'node:path';
 import { Store, can, idField, taskDates, textField, type User } from '../store.ts';
 import { type AuthRequest, allow, current } from '../common/auth.ts';
 import { boardSchema } from '../board/board.schemas.ts';
-import { editTaskSchema, taskSchema, taskSearchSchema } from './tasks.schemas.ts';
+import { editTaskSchema, myTasksSchema, taskSchema, taskSearchSchema } from './tasks.schemas.ts';
 import { taskTypes, type TaskType } from '../../shared/task-types.ts';
 import { taskPriorities, type TaskPriority } from '../../shared/task-priorities.ts';
 
@@ -146,6 +146,25 @@ export class TasksController {
       throw new ForbiddenException('Task güncelleme yetkiniz bulunmuyor.');
     }
     return row.projectId;
+  }
+  @ApiOperation({summary: 'Bana atanan task’lar (task.view yetkisi)'})
+  @ApiResponse({status: 200, schema: myTasksSchema})
+  @Get('mine') async mine(@Req() req: AuthRequest) {
+    const user = allow(req, 'task.view');
+    const projectIds = await this.store.projectIds(user);
+    if (!projectIds.length) return [];
+    // Tamamlanan sütun (projenin son sütunu) listede yer almaz; bitmiş iş "yapılacak" değildir.
+    return (await this.store.db.query(
+      `SELECT t.id, t.title, t.type, t.priority, t."startDate", t."dueDate",
+         t."columnId", c.name AS "columnName", p.id AS "projectId", p.name AS "projectName"
+       FROM tasks t
+       JOIN columns c ON c.id=t."columnId"
+       JOIN projects p ON p.id=c."projectId"
+       WHERE p.id = ANY($1) AND t."assigneeId"=$2
+         AND c.position < (SELECT MAX(position) FROM columns WHERE "projectId"=p.id)
+       ORDER BY t."dueDate" IS NULL, t."dueDate", t.id DESC`,
+      [projectIds, user.id],
+    )).rows;
   }
   @ApiOperation({summary: 'Task ara (task.view yetkisi)'})
   @ApiQuery({name: 'q', required: true, description: 'Task adı ve açıklamasında büyük/küçük harf duyarsız arama; en az iki karakter.', example: 'giriş'})

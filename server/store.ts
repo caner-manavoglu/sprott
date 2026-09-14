@@ -7,6 +7,7 @@ import { APP_TIMEZONE, monthAgo } from '../shared/timezone.ts';
 
 // Yetkiler JSONB olarak tutulur; yeni modül yetkisi eklemek için buraya bir anahtar eklemek yeterlidir.
 export const PERMISSIONS = [
+  'forum.view', 'forum.create', 'forum.update', 'forum.delete',
   'task.view', 'task.create', 'task.update', 'task.delete',
   'user.view', 'user.create', 'user.update', 'user.delete',
   'group.view', 'group.create', 'group.update', 'group.delete',
@@ -18,7 +19,7 @@ export const PERMISSIONS = [
   'announcement.create',
 ] as const;
 export type Permission = typeof PERMISSIONS[number];
-export type User = { id: number; name: string; surname: string; title: string; email: string; role: 'admin' | 'user'; permissions: Partial<Record<Permission, boolean>>; managedGroups?: string[] };
+export type User = { id: number; name: string; surname: string; title: string; email: string; role: 'admin' | 'user'; permissions: Partial<Record<Permission, boolean>>; hasAvatar?: boolean; managedGroups?: string[] };
 // Yöneticiler her yetkiye sahiptir; personelin yetkisi kaydedilmiş olmalıdır.
 export const can = (user: User, permission: Permission) => user.role === 'admin' || user.permissions?.[permission] === true;
 export function hash(password: string) { const salt = randomBytes(16).toString('hex'); return `${salt}:${scryptSync(password, salt, 64).toString('hex')}`; }
@@ -101,7 +102,7 @@ export class Store implements OnModuleInit, OnModuleDestroy {
   onModuleInit() { return this.initialize(); }
   onModuleDestroy() { return this.db.end(); }
   // `managedGroups` her istekte tazelenir; duyuru ve grup raporu yetkileri buna bağlı olduğu için oturumda taşınır.
-  async user(token: string): Promise<User | undefined> { return (await this.db.query(`SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions, ${MANAGED_GROUPS} AS "managedGroups" FROM users u JOIN sessions s ON u.id=s."userId" WHERE s.token=$1 AND s.expires>$2`, [token, Date.now()])).rows[0]; }
+  async user(token: string): Promise<User | undefined> { return (await this.db.query(`SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar", ${MANAGED_GROUPS} AS "managedGroups" FROM users u JOIN sessions s ON u.id=s."userId" WHERE s.token=$1 AND s.expires>$2`, [token, Date.now()])).rows[0]; }
   async board(projectId: number) {
     return this.transaction(async client => {
       await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
@@ -132,6 +133,7 @@ export class Store implements OnModuleInit, OnModuleDestroy {
             COALESCE((SELECT json_agg(json_build_object(
               'id', cm.id, 'body', cm.body, 'authorId', cm."authorId",
               'authorName', NULLIF(TRIM(CONCAT_WS(' ', author.name, author.surname)), ''),
+              'authorHasAvatar', (author."avatarContent" IS NOT NULL),
               'createdAt', cm."createdAt", 'updatedAt', cm."updatedAt",
               'mentions', COALESCE((SELECT json_agg(json_build_object(
                 'id', mentioned.id, 'name', NULLIF(TRIM(CONCAT_WS(' ', mentioned.name, mentioned.surname)), '')

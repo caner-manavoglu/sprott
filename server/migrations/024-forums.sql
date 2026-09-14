@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS forums (
+ id SERIAL PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+ "createdBy" INTEGER REFERENCES users(id) ON DELETE SET NULL, "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS forum_members (
+ "forumId" INTEGER NOT NULL REFERENCES forums(id) ON DELETE CASCADE,
+ "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ status TEXT NOT NULL CHECK (status IN ('pending','joined')), PRIMARY KEY ("forumId","userId")
+);
+CREATE TABLE IF NOT EXISTS forum_messages (
+ id SERIAL PRIMARY KEY, "forumId" INTEGER NOT NULL REFERENCES forums(id) ON DELETE CASCADE,
+ "authorId" INTEGER REFERENCES users(id) ON DELETE SET NULL, body TEXT NOT NULL DEFAULT '',
+ "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS forum_messages_page ON forum_messages ("forumId", id DESC);
+CREATE TABLE IF NOT EXISTS forum_files (
+ id SERIAL PRIMARY KEY, "messageId" INTEGER NOT NULL REFERENCES forum_messages(id) ON DELETE CASCADE,
+ name TEXT NOT NULL, "mimeType" TEXT NOT NULL, size INTEGER NOT NULL, content BYTEA NOT NULL
+);
+CREATE INDEX IF NOT EXISTS forum_files_message ON forum_files ("messageId");

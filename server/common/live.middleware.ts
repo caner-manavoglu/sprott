@@ -25,7 +25,7 @@ export function liveMiddleware() {
       (!req.path.startsWith('/mcp') ||
         (req.path === '/mcp/http' && req.body?.method === 'tools/call' && req.body?.params?.name === 'transition_task') ||
         (req.path === '/mcp/tools' && req.body?.operation === 'transition_task'));
-    if (mutation) res.on('finish', () => {if (res.statusCode < 400) events.emit('changed');});
+    if (mutation) res.on('finish', () => {if (res.statusCode < 400 && res.locals.liveChanged !== false) events.emit('changed');});
     next();
   };
 }

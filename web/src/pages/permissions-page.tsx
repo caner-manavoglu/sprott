@@ -3,6 +3,7 @@ import { Button } from '../components/ui';
 import { fullName, roleLabel } from '../lib/format';
 import { moduleName, moduleSummary } from '../lib/permissions';
 import type { Definition, User } from '../lib/types';
+import { Avatar } from '../components/avatar';
 
 type Props = {
   people: User[];
@@ -24,7 +25,7 @@ export function PermissionsPage({people, definitions, busy, onEdit}: Props) {
         const summary = moduleSummary(person, definitions);
         return <tr key={person.id}>
           <td><div className="person">
-            <span className="user-avatar">{person.name[0]}</span>
+            <Avatar person={person}/>
             <div><strong>{fullName(person)}</strong><small>{person.email}</small></div>
           </div></td>
           <td><span className={`person-role ${person.role}`}>{roleLabel(person.role)}</span></td>

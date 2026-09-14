@@ -12,12 +12,14 @@ export type User = {
   email: string;
   role: Role;
   permissions: Record<string, boolean>;
+  hasAvatar?: boolean;
+  avatarVersion?: number;
   /** Rapor yetkisi için: kullanıcının yönettiği grupların adları. */
   managedGroups?: string[];
 };
 
 /** Grup ve proje listelerinde kullanılan sade kişi kaydı. */
-export type Member = {id: number; name: string; surname: string; title: string};
+export type Member = {id: number; name: string; surname: string; title: string; hasAvatar?: boolean};
 
 export type Group = {id: number; name: string; members: Member[]; managers: Member[]};
 
@@ -78,6 +80,7 @@ export type TaskComment = {
   body: string;
   authorId: number;
   authorName: string;
+  authorHasAvatar?: boolean;
   createdAt: string;
   updatedAt: string;
   mentions: {id: number; name: string}[];
@@ -118,6 +121,12 @@ export type TaskSearchResult = {
   projectName: string;
 };
 
+/** "Bana atananlar" sayfasındaki satır; arama sonucuna tarih alanları eklenir. */
+export type MyTask = TaskSearchResult & {
+  startDate: string | null;
+  dueDate: string | null;
+};
+
 /** Özet ekranındaki "süresi geçen görevler" satırı. */
 export type OverdueTask = {
   id: number;
@@ -154,7 +163,7 @@ export type Report = {
   scope: 'all' | 'group' | 'self';
   groups: string[];
   total: number;
-  rows: {id: number; name: string; surname: string; title: string; assigned: number; completed: number; bugs: number; overdue: number}[];
+  rows: {id: number; name: string; surname: string; title: string; hasAvatar?: boolean; assigned: number; completed: number; bugs: number; overdue: number}[];
 };
 
 export type ReportDetail = {
@@ -197,7 +206,7 @@ export type Announcement = {
   hasImage: boolean;
   /** Boş liste: duyuru herkese açık. */
   groups: {id: number; name: string}[];
-  author: {id: number; name: string; title: string} | null;
+  author: {id: number; name: string; title: string; hasAvatar?: boolean} | null;
   /** Kişinin kendi okuma zamanı; okumadıysa null. */
   readAt: string | null;
   createdAt: string;
@@ -205,13 +214,13 @@ export type Announcement = {
   canManage: boolean;
 };
 
-export type AnnouncementReader = {id: number; name: string; title: string; readAt: string};
+export type AnnouncementReader = {id: number; name: string; title: string; hasAvatar?: boolean; readAt: string};
 
 /** Duyuru detayı: okuyanlar ve henüz okumayanlar. */
 export type AnnouncementDetail = {
   announcement: Announcement;
   readers: AnnouncementReader[];
-  pending: {id: number; name: string; title: string}[];
+  pending: {id: number; name: string; title: string; hasAvatar?: boolean}[];
 };
 
 /** Bildirim ucunun yanıtı: liste ve rozette görünen okunmamış sayısı. */

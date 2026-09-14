@@ -5,6 +5,7 @@ import { Button, DatePicker, Input, Select, Textarea } from '../ui';
 import { DialogActions, DialogShell } from './shell';
 import { canMove, dateLabel, daysLate, fullName, isOverdue, isoDate, monthAgo, taskCode } from '../../lib/format';
 import type { Attachment, Board, Task, TaskComment, User } from '../../lib/types';
+import { Avatar } from '../avatar';
 import { TaskTypeBadge, taskTypeOptions } from '../task-type';
 import { TaskPriorityBadge, taskPriorityOptions } from '../task-priority';
 import { PrStateBadge } from '../pull-request';
@@ -170,7 +171,7 @@ function MentionInput({value, members, onChange, placeholder}: {value: string; m
       onBlur={() => setTimeout(() => setQuery(null), 100)}/>
     {!!suggestions.length && <div className="mention-suggestions">{suggestions.map(person =>
       <button type="button" key={person.id} onMouseDown={event => event.preventDefault()} onClick={() => choose(person)}>
-        <span>{person.name.charAt(0)}{person.surname.charAt(0)}</span><div><strong>{fullName(person)}</strong><small>{person.title}</small></div>
+        <Avatar person={person}/><div><strong>{fullName(person)}</strong><small>{person.title}</small></div>
       </button>)}</div>}
   </div>;
 }
@@ -223,7 +224,7 @@ function CommentItem({taskId, comment, members, currentUser, busy, onUpdate, onD
   const mine = comment.authorId === currentUser.id;
   const cancel = () => {setBody(comment.body); setFiles([]); setEditing(false);};
   return <article className="task-comment">
-    <header><span className="comment-avatar">{comment.authorName.split(/\s+/).map(part => part[0]).slice(0, 2).join('')}</span>
+    <header><Avatar className="comment-avatar" person={{id: comment.authorId, name: comment.authorName, hasAvatar: comment.authorHasAvatar}}/>
       <div><strong>{comment.authorName}</strong><time dateTime={comment.createdAt}>{commentDate.format(new Date(comment.createdAt))}</time></div>
       {mine && !editing && <div className="comment-actions"><Button type="button" variant="ghost" size="icon" aria-label="Yorumu düzenle" onClick={() => setEditing(true)}><Pencil size={13}/></Button>
         <Button type="button" variant="ghost" size="icon" disabled={busy} aria-label="Yorumu sil" onClick={() => onDelete(comment.id)}><Trash2 size={13}/></Button></div>}

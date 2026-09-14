@@ -801,3 +801,95 @@ td {
 .dashboard-panel h2 { margin: 0; font-size: 13px; }
 .dashboard-panel header p { margin: 4px 0 0; color: var(--muted-foreground); font-size: 9px; }
 .dashboard-panel .dashboard-overdue-list button:hover { background: var(--accent); }
+
+.my-task-list { display: grid; gap: 10px; padding: 16px; }
+.my-task { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 13px 15px; border: 1px solid var(--input); border-radius: 12px; background: var(--background); color: inherit; text-align: left; }
+.my-task:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--input)); }
+.my-task.late { border-color: var(--late-border); }
+.my-task-main { min-width: 0; }
+.my-task-main strong { display: block; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.my-task-main small { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: 9px; }
+.my-task-tags { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.my-task-date { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 999px; background: var(--accent); color: var(--muted-foreground); font-size: 9px; }
+.my-task-date.late { background: var(--late-soft); color: var(--late); }
+.profile-panel { max-width: 680px; }
+.profile-avatar { position: relative; display: inline-grid; }
+.profile-avatar .user-avatar { width: 54px; height: 54px; font-size: 17px; }
+.profile-panel .permissions-heading h2 { font-size: 18px; }
+.profile-avatar-loading { position: absolute; inset: 8px; padding: 2px; border-radius: 50%; background: var(--background); color: var(--primary); animation: profile-spin .8s linear infinite; }
+@keyframes profile-spin { to { transform: rotate(360deg); } }
+.profile-panel form { display: grid; gap: 18px; max-width: 480px; padding: 24px; }
+.profile-upload { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px dashed var(--input); border-radius: 10px; cursor: pointer; }
+.profile-upload > span { display: grid; gap: 3px; }
+.profile-upload small { color: var(--muted-foreground); font-weight: 400; }
+.profile-upload .profile-selected-file { color: var(--primary); font-weight: 650; }
+.profile-upload .profile-upload-action { display: inline-flex; align-items: center; margin-left: auto; padding: 9px 14px; border-radius: 8px; background: var(--primary); color: white; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.profile-upload:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, transparent); }
+.profile-upload input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.forum-layout { display: grid; grid-template-columns: minmax(260px, 320px) minmax(0,1fr); align-items: start; gap: 20px; }
+.forum-directory, .forum-chat { border: 1px solid var(--input); border-radius: 14px; background: var(--background); overflow: hidden; min-width: 0; }
+.forum-directory > header, .forum-chat > header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; min-height: 82px; padding: 20px; border-bottom: 1px solid var(--input); }
+.forum-layout h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; }
+.forum-chat header p { margin: 5px 0 0; color: var(--muted-foreground); font-size: 12px; overflow-wrap: anywhere; }
+.forum-directory > p { padding: 18px; }
+.forum-card { padding: 18px 20px; border-bottom: 1px solid var(--input); }
+.forum-card:last-child { border-bottom: 0; }
+.forum-card.active { background: var(--accent); }
+.forum-select { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; text-align: left; color: inherit; background: none; overflow-wrap: anywhere; }
+.forum-card-info { display: grid; flex: 1; min-width: 0; gap: 6px; }
+.forum-select strong { font-size: 14px; }
+.forum-select small { color: var(--muted-foreground); font-size: 11px; }
+.forum-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 56px; }
+.forum-actions:empty { display: none; }
+.forum-actions > button { padding-inline: 8px; }
+.forum-pending { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; }
+.forum-portrait, .forum-heading-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: var(--accent); color: var(--primary); overflow: hidden; }
+.forum-heading-icon { width: 44px; height: 44px; border-radius: 12px; }
+.forum-directory > header h2 { gap: 12px; }
+.forum-portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.forum-chat-heading { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.forum-chat-heading > div { min-width: 0; }
+.forum-request-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 50px; background: var(--primary); color: white; font-size: 11px; font-weight: 700; }
+.forum-messages { display: flex; flex-direction: column; gap: 14px; height: min(55vh,600px); min-height: 280px; overflow: auto; padding: 20px; background: var(--surface); }
+.forum-message { align-self: flex-start; max-width: 90%; padding: 12px 15px; border: 1px solid var(--input); border-radius: 12px; background: var(--background); min-width: 0; }
+.forum-message.mine { align-self: flex-end; background: var(--accent); }
+.forum-message-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; color: var(--muted-foreground); }
+.forum-message-footer > small { font-size: 10px; }
+.forum-receipt-button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 0; background: none; color: inherit; font-size: 10px; }
+.forum-receipt-button:hover span { text-decoration: underline; }
+.forum-receipt-button.read, .forum-read-icon { color: #319cda; }
+.forum-message-actions { display: inline-flex; gap: 4px; margin-left: auto; }
+.forum-message-actions button { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 6px; background: none; color: var(--muted-foreground); }
+.forum-message-actions button:hover { background: var(--surface); color: var(--foreground); }
+.forum-message .forum-deleted { display: flex; align-items: center; gap: 6px; font-style: italic; color: var(--muted-foreground); }
+.forum-message-author { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+.forum-message-author time { color: var(--muted-foreground); font-size: 10px; margin-left: auto; }
+.forum-message p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.6; margin: 10px 0 0; }
+.forum-file { margin-top: 10px; }
+.forum-file img { display: block; max-width: 100%; width: 260px; max-height: 240px; object-fit: contain; border-radius: 8px; }
+.forum-file button { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: inherit; background: none; text-align: left; overflow-wrap: anywhere; padding: 8px 0; font-size: 12px; }
+.forum-file small { color: var(--muted-foreground); }
+.forum-composer { padding: 16px; border-top: 1px solid var(--input); }
+.forum-composer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.forum-composer-actions > small { color: var(--muted-foreground); font-size: 10px; }
+.forum-composer-actions > button { margin-left: auto; }
+.forum-composer-actions label { position: relative; display: flex; align-items: center; gap: 7px; border: 1px solid var(--input); border-radius: 8px; padding: 9px; cursor: pointer; }
+.forum-composer-actions input { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.forum-composer-actions label:focus-within { outline: 2px solid var(--primary); }
+.forum-selected-files { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; font-size: 11px; overflow-wrap: anywhere; }
+.forum-join-note { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 320px; padding: 44px 28px; color: var(--muted-foreground); text-align: center; }
+.forum-join-note h3 { margin: 0; color: var(--foreground); font-size: 17px; }
+.forum-join-note p { max-width: 380px; margin: 0; line-height: 1.6; font-size: 13px; }
+.forum-join-note > button { margin-top: 4px; }
+.forum-empty-icon { display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; border-radius: 22px; background: var(--accent); color: var(--primary); }
+.forum-image-picker img { width: 90px; height: 90px; object-fit: cover; border-radius: 12px; }
+.forum-image-picker input { max-width: 100%; padding: 12px; border: 1px dashed var(--input); border-radius: 8px; }
+.forum-image-picker input::file-selector-button { margin-right: 12px; padding: 7px 10px; border: 0; border-radius: 6px; color: white; background: var(--primary); cursor: pointer; }
+.forum-image-picker small { font-size: 11px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.forum-delete-options { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.forum-people { display: grid; gap: 10px; max-height: 60vh; overflow: auto; }
+.forum-people > div { display: flex; align-items: center; gap: 8px; }
+.forum-people > div > span:not(.user-avatar) { flex: 1; min-width: 0; }
+.forum-people strong, .forum-people small { display: block; }
+.forum-people small { font-size: 11px; color: var(--muted-foreground); }
+@media (max-width: 850px) { .forum-layout { grid-template-columns: 1fr; } .forum-message { max-width: 100%; } }

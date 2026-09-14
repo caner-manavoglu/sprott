@@ -2,10 +2,13 @@ import type { Board } from './lib/types';
 import { idFromPath, segments } from './lib/router';
 
 /** Uygulamanın sayfaları; adres çubuğundaki yol ile birebir eşleşir. */
-export type PageKey = 'dashboard' | 'projects' | 'board' | 'permissions' | 'users' | 'groups' | 'reports' | 'notifications' | 'announcements' | 'pullRequests' | 'logs';
+export type PageKey = 'forums' | 'dashboard' | 'profile' | 'myTasks' | 'projects' | 'board' | 'permissions' | 'users' | 'groups' | 'reports' | 'notifications' | 'announcements' | 'pullRequests' | 'logs';
 
 export const paths = {
   dashboard: '/dashboard',
+  profile: '/profil',
+  forums: '/forumlar',
+  myTasks: '/islerim',
   projects: '/projeler',
   board: (projectId: number) => `/projeler/${projectId}`,
   /** Bildirimden gelen bağlantı: pano açılır ve task detayları kendiliğinden açılır. */
@@ -26,7 +29,10 @@ export const paths = {
 export type PageInfo = {crumb: string; eyebrow: string; heading: string; description: string};
 
 export const pageTitles: Record<PageKey, PageInfo> = {
+  forums: {crumb: 'Forumlar', eyebrow: 'EKİP SOHBETİ', heading: 'Forum / Toplantı Notları', description: 'Ekip sohbetleri, toplantı notları ve paylaşılan dosyalar.'},
   dashboard: {crumb: 'Özet', eyebrow: 'GÜNE BAŞLARKEN', heading: 'Özet', description: 'Projelerin durumunu tek bakışta görün.'},
+  profile: {crumb: 'Profil', eyebrow: 'HESABIM', heading: 'Profil', description: 'Giriş bilgilerinizi ve profil fotoğrafınızı yönetin.'},
+  myTasks: {crumb: 'İşlerim', eyebrow: 'GÜNE BAŞLARKEN', heading: 'Bana atananlar', description: 'Tüm projelerde size atanmış, henüz tamamlanmamış task’lar. Teslim tarihi yaklaşan üstte.'},
   projects: {crumb: 'Projeler', eyebrow: 'ÇALIŞMA ALANI', heading: 'Projeler', description: 'Projeleri yönetin, üyelerini belirleyin ve panolarına geçin.'},
   board: {crumb: 'Pano', eyebrow: 'EKİP ÇALIŞMALARI', heading: 'Çalışma panosu', description: 'İşleri planlayın, ilerlemeyi birlikte takip edin.'},
   permissions: {crumb: 'Yetkiler', eyebrow: 'ERİŞİM YÖNETİMİ', heading: 'Kullanıcı yetkileri', description: 'Ekip üyelerinin modül yetkilerini düzenleyin.'},
@@ -41,6 +47,7 @@ export const pageTitles: Record<PageKey, PageInfo> = {
 
 /** Yetki anahtarları da sayfa başına tek yerde durur. */
 export const moduleLabels: Record<string, string> = {
+  forum: 'Forum / Toplantı Notları modülü',
   project: 'Proje modülü', task: 'Task modülü', user: 'Kullanıcı modülü', group: 'Grup modülü', report: 'Rapor modülü',
   log: 'Log modülü',
   pr: 'PR modülü',
@@ -60,6 +67,9 @@ export function matchRoute(path: string): Route {
   switch (first) {
     case undefined:
     case 'dashboard': return {page: 'dashboard'};
+    case 'profil': return {page: 'profile'};
+    case 'forumlar': return {page: 'forums'};
+    case 'islerim': return {page: 'myTasks'};
     case 'projeler': {
       const projectId = idFromPath(path, 'projeler');
       if (projectId === null) return {page: 'projects'};
@@ -88,4 +98,4 @@ export function headingFor(route: Route, board: Board): PageInfo {
 }
 
 /** Yönlendirme yardımcıları tek kapıdan sunulur. */
-export { navigate, usePath } from './lib/router';
+export { navigate, setParam, usePath, useSearch } from './lib/router';

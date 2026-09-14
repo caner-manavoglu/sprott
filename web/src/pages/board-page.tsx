@@ -4,9 +4,11 @@ import { TaskTypeBadge } from '../components/task-type';
 import { Button } from '../components/ui';
 import { PeopleFilter } from '../components/people-filter';
 import { PriorityFilter, TaskPriorityBadge } from '../components/task-priority';
-import type { TaskPriority } from '../../../shared/task-priorities';
-import { canMove, dateLabel, daysLate, fullName, initials, isOverdue, taskCode } from '../lib/format';
+import { taskPriorities, type TaskPriority } from '../../../shared/task-priorities';
+import { setParam, useSearch } from '../routes';
+import { canMove, dateLabel, daysLate, fullName, isOverdue, taskCode } from '../lib/format';
 import type { Board, Task, User } from '../lib/types';
+import { Avatar } from '../components/avatar';
 
 type Props = {
   board: Board;
@@ -51,8 +53,14 @@ function useColumnShuffle(columns: Board['columns']) {
 }
 
 export function BoardPage({board, members, busy, locked, canCreate, canUpdate, isAdmin, onAddTask, onOpenTask, onMove}: Props) {
-  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
-  const [priorities, setPriorities] = useState<TaskPriority[]>([]);
+  // Filtreler adres çubuğunda tutulur: bağlantı paylaşılabilir, sayfa yenilenince kaybolmaz.
+  const params = new URLSearchParams(useSearch());
+  const assigneeIds = (params.get('kisi')?.split(',') ?? [])
+    .map(Number).filter(id => Number.isSafeInteger(id) && id > 0);
+  const priorities = (params.get('oncelik')?.split(',') ?? [])
+    .filter((value): value is TaskPriority => taskPriorities.includes(value as TaskPriority));
+  const setAssigneeIds = (next: number[]) => setParam('kisi', next.join(','));
+  const setPriorities = (next: TaskPriority[]) => setParam('oncelik', next.join(','));
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [draggedTask, setDraggedTask] = useState<number | null>(null);
   const [landedTask, setLandedTask] = useState<number | null>(null);
@@ -64,10 +72,10 @@ export function BoardPage({board, members, busy, locked, canCreate, canUpdate, i
     && (!priorities.length || priorities.includes(task.priority)));
 
   const toggleAssignee = (id: number) =>
-    setAssigneeIds(current => (current.includes(id) ? current.filter(item => item !== id) : [...current, id]));
+    setAssigneeIds(assigneeIds.includes(id) ? assigneeIds.filter(item => item !== id) : [...assigneeIds, id]);
 
   const togglePriority = (priority: TaskPriority) =>
-    setPriorities(current => (current.includes(priority) ? current.filter(item => item !== priority) : [...current, priority]));
+    setPriorities(priorities.includes(priority) ? priorities.filter(item => item !== priority) : [...priorities, priority]);
 
   /** Sürüklenen task bu sütuna bırakılabilir mi; akış kuralı kapalıysa sütun pasif görünür. */
   const dropAllowed = (columnId: number) => {
@@ -155,7 +163,7 @@ export function BoardPage({board, members, busy, locked, canCreate, canUpdate, i
                     {openPrCount > 0 && <span className="task-prs" title={`${openPrCount} açık pull request`}>
                       <GitPullRequest size={12}/>{openPrCount}
                     </span>}
-                    {assignee && <span className="task-assignee"><span className="assignee-avatar">{initials(assignee)}</span>{fullName(assignee)}</span>}
+                    {assignee && <span className="task-assignee"><Avatar person={assignee} className="assignee-avatar"/>{fullName(assignee)}</span>}
                   </div>
                 </button>;
               })}

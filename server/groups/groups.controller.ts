@@ -15,9 +15,9 @@ export class GroupsController {
   private async list() {
     return (await this.store.db.query(`
       SELECT g.id, g.name,
-        COALESCE((SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'surname', u.surname, 'title', u.title) ORDER BY u.name, u.surname)
+        COALESCE((SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'surname', u.surname, 'title', u.title, 'hasAvatar', (u."avatarContent" IS NOT NULL)) ORDER BY u.name, u.surname)
           FROM group_members m JOIN users u ON u.id = m."userId" WHERE m."groupId" = g.id), '[]') AS members,
-        COALESCE((SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'surname', u.surname, 'title', u.title) ORDER BY u.name, u.surname)
+        COALESCE((SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'surname', u.surname, 'title', u.title, 'hasAvatar', (u."avatarContent" IS NOT NULL)) ORDER BY u.name, u.surname)
           FROM group_managers gm JOIN users u ON u.id = gm."userId" WHERE gm."groupId" = g.id), '[]') AS managers
       FROM groups g
       ORDER BY g.name
@@ -52,7 +52,7 @@ export class GroupsController {
   @ApiResponse({status: 200, schema: membersSchema})
   @Get('members') async candidates(@Req() req: AuthRequest) {
     allow(req, 'group.view');
-    return (await this.store.db.query('SELECT id,name,surname,title FROM users ORDER BY name,surname')).rows;
+    return (await this.store.db.query('SELECT id,name,surname,title,("avatarContent" IS NOT NULL) AS "hasAvatar" FROM users ORDER BY name,surname')).rows;
   }
   @ApiOperation({summary: 'Grup oluştur (group.create yetkisi)'})
   @ApiBody({schema: editGroupSchema})

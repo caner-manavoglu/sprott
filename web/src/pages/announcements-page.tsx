@@ -3,6 +3,7 @@ import { Button } from '../components/ui';
 import { AnnouncementImage, audienceLabel } from '../components/announcement';
 import { notificationTime } from '../components/notifications';
 import type { Announcement, AnnouncementDetail } from '../lib/types';
+import { Avatar } from '../components/avatar';
 
 type ListProps = {
   announcements: Announcement[];
@@ -84,7 +85,7 @@ export function AnnouncementReportPage({detail, onBack}: {detail: AnnouncementDe
         <header><div><h2>Okuyanlar ({readers.length})</h2></div></header>
         <ul className="announcement-people">
           {readers.map(person => <li key={person.id}>
-            <span className="user-avatar">{person.name?.[0] ?? '?'}</span>
+            <Avatar person={person}/>
             <div><strong>{person.name}</strong><small>{person.title}</small></div>
             <small>{notificationTime(person.readAt)}</small>
           </li>)}
@@ -96,7 +97,7 @@ export function AnnouncementReportPage({detail, onBack}: {detail: AnnouncementDe
         <header><div><h2>Okumayanlar ({pending.length})</h2></div></header>
         <ul className="announcement-people">
           {pending.map(person => <li key={person.id}>
-            <span className="user-avatar">{person.name?.[0] ?? '?'}</span>
+            <Avatar person={person}/>
             <div><strong>{person.name}</strong><small>{person.title}</small></div>
           </li>)}
           {!pending.length && <li className="muted text-xs">Herkes okudu.</li>}

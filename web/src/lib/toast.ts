@@ -8,6 +8,8 @@ export function toast(message: string, kind: ToastMessage['kind'] = 'success') {
 export function actionMessage(path: string, method: string, body?: unknown): string | null {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return null;
   path = path.split('?')[0];
+  if (/^forums\/(receipts|\d+\/messages(?:\/\d+)?)$/.test(path)) return null;
+  if (/^forums\/\d+\/members\//.test(path)) return method === 'DELETE' ? 'Forum üyeliği / isteği kaldırıldı.' : 'Forum üyeliği onaylandı.';
   const values = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   if (path === 'login') return 'Giriş yapıldı. Hoş geldiniz.';
   if (path === 'logout') return 'Güvenli şekilde çıkış yapıldı.';

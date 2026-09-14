@@ -11,7 +11,7 @@ type Upload = {originalname: string; mimetype: string; size: number; buffer: Buf
 const imageOptions = {limits: {fileSize: 10 * 1024 * 1024}};
 /** Kişi kartı; okuyan/okumayan listeleri ve duyuru sahibi aynı biçimi paylaşır. */
 const person = (alias: string, extra = '') =>
-  `json_build_object('id', ${alias}.id, 'name', NULLIF(TRIM(CONCAT_WS(' ', ${alias}.name, ${alias}.surname)), ''), 'title', ${alias}.title${extra})`;
+  `json_build_object('id', ${alias}.id, 'name', NULLIF(TRIM(CONCAT_WS(' ', ${alias}.name, ${alias}.surname)), ''), 'title', ${alias}.title, 'hasAvatar', (${alias}."avatarContent" IS NOT NULL)${extra})`;
 
 @ApiTags('Duyurular')
 @ApiBearerAuth('bearer')

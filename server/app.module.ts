@@ -15,6 +15,7 @@ import { LogsModule } from './logs/logs.module.ts';
 import { AnnouncementsModule } from './announcements/announcements.module.ts';
 import { PullRequestsModule } from './pull-requests/pull-requests.module.ts';
 import { McpModule } from './mcp/mcp.controller.ts';
+import { ForumsModule } from './forums/forums.controller.ts';
 
-@Module({imports: [StoreModule, AuthModule, BoardModule, TasksModule, PermissionsModule, UsersModule, GroupsModule, ProjectsModule, DashboardModule, ReportsModule, NotificationsModule, WorkflowModule, LogsModule, AnnouncementsModule, PullRequestsModule, McpModule]})
+@Module({imports: [StoreModule, AuthModule, BoardModule, TasksModule, PermissionsModule, UsersModule, GroupsModule, ProjectsModule, DashboardModule, ReportsModule, NotificationsModule, WorkflowModule, LogsModule, AnnouncementsModule, PullRequestsModule, McpModule, ForumsModule]})
 export class AppModule {}

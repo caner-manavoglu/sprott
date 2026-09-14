@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Check, Search, X } from 'lucide-react';
 import { Input } from './ui';
 import { api } from '../api';
-import { fullName, initials, matches } from '../lib/format';
+import { fullName, matches } from '../lib/format';
 import type { User } from '../lib/types';
+import { Avatar } from './avatar';
 
 type Props = {
   members: User[];
@@ -53,7 +54,7 @@ export function PeopleFilter({members, selected, onToggle, onClear}: Props) {
         className={`people-chip ${selected.includes(person.id) ? 'active' : ''}`}
         title={`${fullName(person)} · yalnızca bu kişinin task’ları`}
         aria-pressed={selected.includes(person.id)} onClick={() => onToggle(person.id)}>
-        {initials(person)}<span className="people-name">{fullName(person)}</span>
+        <Avatar person={person} className="people-avatar"/><span className="people-name">{fullName(person)}</span>
       </button>)}
 
       {members.length > VISIBLE_CHIPS && <button type="button" className="people-chip more" title="Tüm üyeler" onClick={() => setOpen(value => !value)}>
@@ -70,7 +71,7 @@ export function PeopleFilter({members, selected, onToggle, onClear}: Props) {
           {results.map(person => <button key={person.id} type="button"
             className={selected.includes(person.id) ? 'active' : ''}
             aria-pressed={selected.includes(person.id)} onClick={() => onToggle(person.id)}>
-            <span className="people-chip">{initials(person)}</span>
+            <Avatar person={person} className="people-chip"/>
             <span>{fullName(person)}</span>
             {selected.includes(person.id) && <Check size={14}/>}
           </button>)}

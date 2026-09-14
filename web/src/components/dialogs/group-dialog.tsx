@@ -4,6 +4,7 @@ import { Button, Input } from '../ui';
 import { DialogActions, DialogShell } from './shell';
 import { fullName } from '../../lib/format';
 import type { Group, Member } from '../../lib/types';
+import { Avatar } from '../avatar';
 
 export type GroupDraft = 'new' | Group;
 
@@ -42,7 +43,7 @@ export function GroupDialog({draft, candidates, busy, error, onClose, onSubmit}:
       event.dataTransfer.effectAllowed = 'move';
     }}>
       <GripVertical size={14} className="drag-handle"/>
-      <span className="user-avatar">{person.name[0]}</span>
+      <Avatar person={person}/>
       <div className="member-info"><strong>{fullName(person)}</strong>{person.title && <small>{person.title}</small>}</div>
       {actions}
     </div>;
