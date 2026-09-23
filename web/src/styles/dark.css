@@ -74,7 +74,10 @@
 :root[data-theme="dark"] .sidebar nav button.open { color: var(--green); }
 
 :root[data-theme="dark"] .sidebar nav .nav-toggle { color: var(--muted-foreground); }
-:root[data-theme="dark"] .sidebar nav .nav-toggle:hover { background: var(--subtle); }
+/* Zemin satırın tamamına verilir; düğme başına verilirse ok kopuk görünür. */
+:root[data-theme="dark"] .nav-row:hover { background: var(--subtle); }
+:root[data-theme="dark"] .nav-row:hover > button:not(.active) { color: var(--green); }
+:root[data-theme="dark"] .sidebar nav .nav-row > button:hover { background: none; }
 
 :root[data-theme="dark"] .nav-sub:before { background: var(--input); }
 :root[data-theme="dark"] .nav-sub-dot { background: var(--input); }

@@ -94,12 +94,19 @@
   color: #58437b;
 }
 
-/* Projeler satırı: solda modül düğmesi, sağda alt listeyi açan ok. */
+/* Projeler satırı: solda modül düğmesi, sağda alt listeyi açan ok.
+   Zemin iki düğmeye ayrı ayrı değil, satırın tamamına verilir; yoksa
+   yalnızca imlecin durduğu yarı boyanır ve ok kopuk görünür. */
 .nav-row {
   display: flex;
   align-items: center;
   gap: 2px;
+  border-radius: 7px;
 }
+
+.nav-row:hover { background: #f1eff4; }
+.nav-row:hover > button:not(.active) { color: #58437b; }
+.sidebar nav .nav-row > button:hover { background: none; }
 
 .nav-row > button:first-child {
   flex: 1;
@@ -147,10 +154,7 @@
 
 .sidebar nav .nav-toggle[aria-expanded="false"] > svg { transform: rotate(-90deg); }
 
-.sidebar nav .nav-toggle:hover {
-  background: #e9e4f1;
-  color: #58437b;
-}
+.sidebar nav .nav-toggle:hover { color: #58437b; }
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar nav .nav-toggle > svg { transition: none; }

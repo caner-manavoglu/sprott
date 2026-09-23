@@ -516,7 +516,33 @@ td {
   margin-left: auto;
 }
 
-.log-filters > * { width: min(200px, 34vw); }
+.log-filters > * { width: min(200px, 26vw); }
+
+/* Günlük sayfalayıcısı; alt çubuğun sağına yaslanır. */
+.pager {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.pager button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--input);
+  border-radius: 7px;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.pager button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pager button:disabled { opacity: .45; cursor: default; }
 
 .log-action {
   display: inline-flex;

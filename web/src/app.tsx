@@ -59,6 +59,7 @@ export function App() {
   const [log, setLog] = useState<ActivityLog | null>(null);
   const [logProject, setLogProject] = useState<number | null>(null);
   const [logTask, setLogTask] = useState<number | null>(null);
+  const [logActor, setLogActor] = useState<number | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [people, setPeople] = useState<User[]>([]);
@@ -276,6 +277,7 @@ export function App() {
           setLog(feedLog);
           setLogProject(feedLog.projectId);
           setLogTask(null);
+          setLogActor(null);
           break;
         }
         case 'notifications':
@@ -420,6 +422,16 @@ export function App() {
       return;
     }
     moveTask(taskId, columnId);
+  };
+
+  /** Günlük sorgusu; verilmeyen filtreler mevcut seçimden okunur, filtre değişince sayfa 1'e döner. */
+  const loadLogs = (change: {projectId?: number; taskId?: number | null; actorId?: number | null; page?: number}) => {
+    const projectId = change.projectId ?? logProject;
+    const taskId = 'projectId' in change ? null : change.taskId !== undefined ? change.taskId : logTask;
+    const actorId = 'projectId' in change ? null : change.actorId !== undefined ? change.actorId : logActor;
+    const page = change.page ?? 1;
+    return `logs?projectId=${projectId ?? ''}${taskId ? `&taskId=${taskId}` : ''}`
+      + `${actorId ? `&actorId=${actorId}` : ''}${page > 1 ? `&page=${page}` : ''}`;
   };
 
   /** PR ekranının verisini tazeler; pano açıksa kartlardaki rozet de güncellenir. */
@@ -609,17 +621,23 @@ export function App() {
       </div>}
 
       {route.page === 'logs' && <div className="page-body">
-        <LogsPage log={log} busy={busy} taskId={logTask}
+        <LogsPage log={log} busy={busy} taskId={logTask} actorId={logActor}
           onProject={projectId => {
+            // Proje değişince task ve personel listeleri de değişir; filtreler sıfırlanır.
             setLogProject(projectId);
             setLogTask(null);
-            void run(async () => setLog(await api<ActivityLog>(`logs?projectId=${projectId}`)));
+            setLogActor(null);
+            void run(async () => setLog(await api<ActivityLog>(loadLogs({projectId}))));
           }}
           onTask={taskId => {
             setLogTask(taskId);
-            const query = `logs?projectId=${logProject ?? ''}${taskId ? `&taskId=${taskId}` : ''}`;
-            void run(async () => setLog(await api<ActivityLog>(query)));
-          }}/>
+            void run(async () => setLog(await api<ActivityLog>(loadLogs({taskId}))));
+          }}
+          onActor={actorId => {
+            setLogActor(actorId);
+            void run(async () => setLog(await api<ActivityLog>(loadLogs({actorId}))));
+          }}
+          onPage={page => void run(async () => setLog(await api<ActivityLog>(loadLogs({page}))))}/>
       </div>}
 
       {route.page === 'notifications' && <div className="page-body">

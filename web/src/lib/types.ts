@@ -248,5 +248,9 @@ export type ActivityLog = {
   projects: {id: number; name: string}[];
   projectId: number | null;
   tasks: {id: number; title: string}[];
+  actors: {id: number; name: string}[];
   rows: LogRow[];
+  total: number;
+  page: number;
+  pageSize: number;
 };

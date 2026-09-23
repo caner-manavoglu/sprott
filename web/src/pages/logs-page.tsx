@@ -1,4 +1,4 @@
-import { ArrowRight, Check, GitPullRequest, MessageSquare, Plus, ScrollText, Trash2, Unlink, UserPlus } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, GitPullRequest, MessageSquare, Plus, ScrollText, Trash2, Unlink, UserPlus } from 'lucide-react';
 import { Select } from '../components/ui';
 import type { ActivityLog, LogAction } from '../lib/types';
 
@@ -20,19 +20,26 @@ type Props = {
   log: ActivityLog | null;
   busy: boolean;
   taskId: number | null;
+  actorId: number | null;
   onProject: (projectId: number) => void;
   onTask: (taskId: number | null) => void;
+  onActor: (actorId: number | null) => void;
+  onPage: (page: number) => void;
 };
 
 /**
- * Etkinlik günlüğü. Salt okunur: listeleme dışında bir işlem yoktur,
- * kayıtlar eskiden yeniye kronolojik sırayla gelir.
+ * Etkinlik günlüğü. Salt okunur: listeleme dışında bir işlem yoktur.
+ * Kayıtlar yeniden eskiye sıralıdır ve sunucudan sayfa sayfa gelir.
  */
-export function LogsPage({log, busy, taskId, onProject, onTask}: Props) {
+export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor, onPage}: Props) {
   if (log && !log.projects.length) {
     return <div className="empty-panel"><div><ScrollText size={22}/></div><strong>Görüntülenecek proje yok</strong>
       <span>Bir projeye eklendiğinizde o projenin günlüğü burada görünür.</span></div>;
   }
+
+  const total = log?.total ?? 0;
+  const page = log?.page ?? 1;
+  const pages = Math.max(1, Math.ceil(total / (log?.pageSize || 50)));
 
   return <div className="permissions-panel">
     <div className="permissions-heading">
@@ -42,6 +49,10 @@ export function LogsPage({log, busy, taskId, onProject, onTask}: Props) {
         <Select value={String(log?.projectId ?? '')} disabled={busy} placeholder="Proje seçin"
           onValueChange={value => onProject(Number(value))}
           options={(log?.projects ?? []).map(project => ({value: project.id, label: project.name}))}/>
+        {/* Projede kaydı olan personel; "Tümü" kişi filtresini kaldırır. */}
+        <Select value={String(actorId ?? 0)} disabled={busy} placeholder="Tüm personel"
+          onValueChange={value => onActor(Number(value) || null)}
+          options={[{value: 0, label: 'Tüm personel'}, ...(log?.actors ?? []).map(actor => ({value: actor.id, label: actor.name}))]}/>
         {/* Projedeki task'lar listelenir; "Tümü" bütün kayıtları gösterir. */}
         <Select value={String(taskId ?? 0)} disabled={busy} placeholder="Tüm task’lar"
           onValueChange={value => onTask(Number(value) || null)}
@@ -62,13 +73,21 @@ export function LogsPage({log, busy, taskId, onProject, onTask}: Props) {
           <td>{row.detail ?? <span className="permission-summary">—</span>}</td>
         </tr>)}
         {!log?.rows.length && <tr><td colSpan={5} className="muted">
-          {taskId ? 'Bu task için kayıt yok.' : 'Bu projede henüz kayıt yok.'}
+          {taskId || actorId ? 'Bu filtrelerle kayıt yok.' : 'Bu projede henüz kayıt yok.'}
         </td></tr>}
       </tbody>
     </table></div>
 
     <div className="permissions-foot">
-      <ScrollText size={14}/> {log?.rows.length ?? 0} kayıt · eskiden yeniye sıralı.
+      <ScrollText size={14}/> {total} kayıt · yeniden eskiye sıralı{pages > 1 && ` · sayfa ${page}/${pages}`}.
+      {pages > 1 && <div className="pager">
+        <button type="button" disabled={busy || page <= 1} onClick={() => onPage(page - 1)} aria-label="Önceki sayfa">
+          <ChevronLeft size={15}/>
+        </button>
+        <button type="button" disabled={busy || page >= pages} onClick={() => onPage(page + 1)} aria-label="Sonraki sayfa">
+          <ChevronRight size={15}/>
+        </button>
+      </div>}
     </div>
   </div>;
 }
