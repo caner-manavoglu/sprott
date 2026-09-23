@@ -1,10 +1,10 @@
 # Sprott
 
-Ekip içi task takip uygulaması. NestJS REST API, PostgreSQL, React ve shadcn/ui.
+Ekip içi task takip uygulaması. NestJS REST API, Prisma ORM, PostgreSQL, React ve shadcn/ui.
 
 ## Kurulum
 
-Node.js 22+ ve Docker gerekir.
+Node.js 22.12+ ve Docker gerekir.
 
 ```sh
 npm install
@@ -15,6 +15,7 @@ cp .env.example .env
 
 ```sh
 npm run db:up
+npm run db:deploy
 npm run dev
 ```
 
@@ -22,7 +23,44 @@ npm run dev
 - REST API: http://127.0.0.1:3000/api
 - Swagger UI: http://127.0.0.1:3000/api/docs
 
-İlk açılışta şema ve iki başlangıç hesabı oluşturulur: `admin@sprott.local` (yönetici), `personel@sprott.local` (kullanıcı). Şifreler `.env` dosyasındadır.
+Şema `db:deploy` ile kurulur. İlk açılışta veritabanı boşsa iki başlangıç hesabı oluşturulur: `admin@sprott.local` (yönetici), `personel@sprott.local` (kullanıcı). Şifreler `.env` dosyasındadır.
+
+## Backend yapısı
+
+```text
+prisma/
+  schema.prisma                 # 28 model, ilişkiler, @@map ile mevcut tablo adları
+  migrations/0_init/migration.sql
+server/
+  prisma/                       # PrismaService ve paylaşılan bağlantı
+  common/                       # DTO pipe, doğrulama ve oturum yardımcıları
+  workspace/                    # Ortak erişim, pano, bildirim ve günlük işlemleri
+  tasks/
+    dto/tasks.dto.ts            # CreateTaskDto, UpdateTaskDto, TaskCommentDto
+    tasks.controller.ts         # HTTP rotaları, Swagger, DTO pipe
+    tasks.service.ts            # İş kuralları ve Prisma sorguları
+    tasks.module.ts             # Dependency injection
+    tasks.schemas.ts           # Swagger yanıt/istek açıklamaları
+  ...                           # Diğer modüller aynı controller/service düzeninde
+```
+
+Prisma'da entity karşılığı `schema.prisma` modelleridir; ayrıca TypeORM entity sınıfları tutulmaz. Tipler `npm run db:generate` ile `server/generated/prisma` içine üretilir (Git'e eklenmez). DTO'lar mevcut Zod bağımlılığıyla tanımlanır; `DtoPipe` istekleri çalışma anında doğrular. `tsx` decorator metadata üretimine bağımlı olmamak için pipe ve injection açıkça bağlanmıştır.
+
+CRUD işlemleri Prisma model metotlarını kullanır. Çok tablolu raporlar, PostgreSQL JSON toplamaları, kilitler ve bazı atomik koşullu işlemler `server/prisma/sql.ts` üzerinden Prisma'nın parametreli SQL API'siyle çalışır. Kullanıcı verisi SQL metnine eklenmez. `pg`, Prisma'nın PostgreSQL sürücüsü ve test/migration yardımcıları için kalır; controller'lar veritabanına erişmez.
+
+### Mevcut PostgreSQL veritabanını Prisma Migrate'e alma
+
+`0_init`, önceki SQL migration'larının tamamını ve CHECK/foreign key/index tanımlarını korur. Eski uygulamanın tüm migration'ları uygulanmış bir veritabanında önce fark olmadığını doğrulayın, sonra baseline'ı uygulanmış olarak kaydedin:
+
+```sh
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+npm run db:baseline
+npm run db:deploy
+```
+
+Fark varsa baseline kaydetmeden önce farkı inceleyin. Bu adımlar mevcut kayıtları silmez; `db:baseline` yalnızca migration geçmişini başlatır ve bir kez çalıştırılır. Boş veritabanında baseline komutu kullanılmaz, yalnızca `db:deploy` çalıştırılır. Uygulama başlangıcında DDL çalıştırılmaz.
+
+Sonraki model değişikliklerinde geliştirme veritabanında `npm run db:migrate -- --name degisiklik_adi`, ardından `npm run db:generate` çalıştırın. Oluşan SQL'i inceleyip migration klasörünü Git'e ekleyin; dağıtımda `npm run db:deploy` kullanın. SQLite aktarımından önce boş hedefte `db:deploy` çalıştırın.
 
 ## Modüller
 
@@ -48,10 +86,11 @@ npm run dev
 
 ```sh
 npm run dev      # API + arayüz (watch)
-npm test         # gerçek PostgreSQL üzerinde geçici şemada API testleri
+npm test         # geçici PostgreSQL şemalarında API + Prisma migration testleri
 npm run build    # tip kontrolü + arayüz derlemesi
 npm start        # derlenmiş arayüzü de sunan tek sunucu (:3000)
 npm run db:down  # veritabanını durdurur, verileri silmez
+npm run db:studio # Prisma model/veri arayüzü
 ```
 
 Tarih hesapları (gecikme, rapor sayaçları) `shared/timezone.ts` içindeki `Europe/Istanbul` referansına göre yapılır.

@@ -28,6 +28,7 @@
     "web",
     "tests",
     "vite.config.ts",
-    "scripts"
+    "scripts",
+    "prisma.config.ts"
   ]
 }

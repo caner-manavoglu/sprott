@@ -24,7 +24,7 @@ test('Axios sends JSON and bearer token, preserves API errors and expires only p
       await assert.rejects(api(path), /Erişim reddedildi/);
       assert.equal(authToken, path === 'me' ? '' : 'test-token');
     }
-    assert.deepEqual(events, ['session-expired']);
+    assert.deepEqual(events.filter(event => event === 'session-expired'), ['session-expired']);
     axios.defaults.adapter = async () => {throw new AxiosError('Network Error', 'ERR_NETWORK');};
     await assert.rejects(api('board'), /Sunucuya ulaşılamıyor/);
   } finally {

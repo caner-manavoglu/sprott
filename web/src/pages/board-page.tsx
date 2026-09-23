@@ -27,26 +27,28 @@ type Props = {
 
 /** Sütunlar yeniden sıralandığında kartların yeni yerine süzülmesini sağlar. */
 function useColumnShuffle(columns: Board['columns']) {
-  const rects = useRef(new Map<number, DOMRect>());
+  // Konum `offsetLeft` ile okunur: `getBoundingClientRect` süren animasyonun
+  // transform'unu da içerdiği için ölçüm kendi animasyonundan etkilenirdi.
+  const positions = useRef(new Map<number, number>());
   useLayoutEffect(() => {
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.querySelectorAll<HTMLElement>('[data-board-column]').forEach(node => {
       const id = Number(node.dataset.boardColumn);
-      const rect = node.getBoundingClientRect();
-      const before = rects.current.get(id);
-      rects.current.set(id, rect);
-      const shift = before ? before.left - rect.left : 0;
+      const left = node.offsetLeft;
+      const before = positions.current.get(id);
+      positions.current.set(id, left);
+      const shift = before === undefined ? 0 : before - left;
       if (reduceMotion || Math.abs(shift) < 2) return;
 
       node.getAnimations().forEach(animation => animation.cancel());
       node.style.zIndex = '2';
-      // Havalan → yeni yerine süzül → otur.
+      // Havalan → yeni yerine süzül → otur. Sürükleme sırasında sıra art arda
+      // değiştiği için kısa tutulur; uzun animasyon yarıda kesilip zıplıyordu.
       const animation = node.animate([
-        {transform: `translateX(${shift}px)`, boxShadow: '0 0 0 rgba(9,39,28,0)'},
-        {transform: `translate(${shift * 0.6}px,-26px) scale(1.035)`, boxShadow: '0 22px 38px rgba(9,39,28,.28)', offset: 0.3},
-        {transform: `translate(${shift * 0.4}px,-26px) scale(1.035)`, boxShadow: '0 22px 38px rgba(9,39,28,.28)', offset: 0.55},
-        {transform: 'translate(0,0) scale(1)', boxShadow: '0 0 0 rgba(9,39,28,0)'},
-      ], {duration: 820, easing: 'cubic-bezier(.22,.61,.36,1)'});
+        {transform: `translateX(${shift}px)`, boxShadow: '0 0 0 rgb(0 0 0 / 0)'},
+        {transform: `translate(${shift * 0.5}px,-14px) scale(1.02)`, boxShadow: '0 18px 30px rgb(0 0 0 / .32)', offset: 0.5},
+        {transform: 'translate(0,0) scale(1)', boxShadow: '0 0 0 rgb(0 0 0 / 0)'},
+      ], {duration: 360, easing: 'cubic-bezier(.22,.61,.36,1)'});
       animation.finished.catch(() => {}).finally(() => {node.style.zIndex = '';});
     });
   }, [columns]);

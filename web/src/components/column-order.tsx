@@ -14,10 +14,17 @@ export function ColumnOrder({columns, disabled, onReorder, onPreview, children}:
   const list = useRef<HTMLDivElement>(null), current = useRef(columns);
   const previous = useRef(new Map<number, DOMRect>());
   const drag = useRef<{id: number; y: number; moved: boolean}|null>(null);
+  // Kaydedilmemiş sıra değişikliği var mı: `columns` prop'u önizleme yüzünden zaten
+  // yeni sırayı taşıdığı için karşılaştırmayla anlaşılamaz.
+  const dirty = useRef(false);
+  /** Önizleme öncesi son bilinen sıra; iptal buraya döner. */
+  const baseline = useRef(columns);
   function update(next: Column[], preview = true) {
     current.current = next; setOrder(next);
     if (preview) onPreview?.(next.map(column => column.id));
+    else baseline.current = next;
   }
+  function cancel() { drag.current = null; setDragging(null); dirty.current = false; update(baseline.current); }
   useEffect(() => { if (!drag.current) update(columns, false); }, [columns]);
   useLayoutEffect(() => {
     list.current?.querySelectorAll<HTMLElement>('[data-column-row]').forEach(row => {
@@ -32,11 +39,13 @@ export function ColumnOrder({columns, disabled, onReorder, onPreview, children}:
   function move(id: number, target: number) {
     const next = [...current.current], from = next.findIndex(column => column.id === id);
     if (from < 0 || target < 0 || target >= next.length || from === target) return;
-    next.splice(target, 0, next.splice(from, 1)[0]); update(next);
+    next.splice(target, 0, next.splice(from, 1)[0]); dirty.current = true; update(next);
   }
   async function save() {
-    if (current.current.every((column, index) => column.id === columns[index]?.id)) return;
-    if (!await onReorder(current.current.map(column => column.id))) update(columns);
+    if (!dirty.current) return;
+    dirty.current = false;
+    // Kaydedilemezse pano çağıran tarafta eski haline döner; yukarıdaki effect yerel sırayı ona göre tazeler.
+    await onReorder(current.current.map(column => column.id));
   }
   return <div ref={list} className="column-order" aria-label="Sütun sıralaması">
     <p className="text-xs text-muted-foreground" id="column-order-help">Tutamacı sürükleyin veya odaklayıp ↑ / ↓ tuşlarıyla sıralayın.</p>
@@ -57,9 +66,9 @@ export function ColumnOrder({columns, disabled, onReorder, onPreview, children}:
           if (target >= 0) move(active.id, target);
         }}
         onPointerUp={() => { if (!drag.current) return; drag.current = null; setDragging(null); void save(); }}
-        onPointerCancel={() => {drag.current = null; setDragging(null); update(columns);}}
+        onPointerCancel={cancel}
         onKeyDown={event => {
-          if (event.key === 'Escape') {drag.current = null;setDragging(null);update(columns);}
+          if (event.key === 'Escape') cancel();
           if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
           event.preventDefault(); move(column.id, current.current.findIndex(item => item.id === column.id) + (event.key === 'ArrowUp' ? -1 : 1)); void save();
         }}><GripVertical size={17}/></Button>

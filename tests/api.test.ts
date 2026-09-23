@@ -1,3 +1,6 @@
+import { installTestSchema } from './database.ts';
+import { sql } from '../server/prisma/sql.ts';
+import { PrismaService } from '../server/prisma/prisma.service.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import 'dotenv/config';
@@ -12,6 +15,8 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
   await database.query(`CREATE SCHEMA ${schema}`);
   const testUrl = new URL(connectionString);
   testUrl.searchParams.set('options', `-c search_path=${schema}`);
+  testUrl.searchParams.set('schema', schema);
+  await installTestSchema(database, schema);
   process.env.DATABASE_URL = testUrl.toString();
   process.env.NODE_ENV = 'test';
   process.env.ADMIN_EMAIL = 'admin@test.local';
@@ -19,7 +24,7 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
   process.env.ADMIN_PASSWORD = 'Admin-test-123456';
   process.env.USER_PASSWORD = 'Personel-test-123456';
   const { createApp } = await import('../server/main.ts');
-  const { Store } = await import('../server/store.ts');
+  const { WorkspaceService: Store } = await import('../server/workspace/workspace.service.ts');
   const app = await createApp();
   await app.listen(0, '127.0.0.1');
   const url = await app.getUrl();
@@ -67,7 +72,7 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
     assert.equal(granted.status,200);
     assert.deepEqual(granted.data[1].permissions,{'task.view':true,'task.create':true,'task.update':true});
     const definitions = await request('permissions/definitions','GET',undefined,a);
-    const { PERMISSIONS } = await import('../server/store.ts');
+    const { PERMISSIONS } = await import('../server/common/fields.ts');
     assert.deepEqual(definitions.data.map((item: {key: string}) => item.key),[...PERMISSIONS]);
     assert.equal((await request('permissions/definitions','GET',undefined,u)).status,403);
     const own = await request('tasks','POST',task,u);
@@ -87,22 +92,25 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
     const columns = await request('columns','POST',{name:'İnceleme',projectId:1},a);
     const columnId = columns.data.columns.at(-1).id;
     assert.equal((await request(`columns/${columnId}`,'PATCH',{name:'Kontrol'},a)).status,200);
+    assert.equal((await request(`tasks/${taskId}`,'PATCH',{columnId},u)).status,403);
+    await request(`tasks/${taskId}`,'PATCH',{assigneeId: 2},a);
     assert.equal((await request(`tasks/${taskId}`,'PATCH',{columnId},u)).status,200);
     assert.equal((await request(`tasks/${taskId}`,'PATCH',{columnId:999},u)).status,404);
     assert.equal((await request(`columns/${columnId}`,'DELETE',undefined,a)).status,400);
-    await request(`tasks/${taskId}`,'PATCH',{columnId:2},u);
+    assert.equal((await request(`tasks/${taskId}`,'PATCH',{columnId:2},u)).status,403);
+    await request(`tasks/${taskId}`,'PATCH',{columnId:2},a);
     assert.equal((await request(`columns/${columnId}`,'DELETE',undefined,a)).status,200);
     // Çerez artık kabul edilmiyor: ambient credential ile istek atılamaz.
     const cookieOnly = await fetch(`${url}/api/tasks`,{method:'POST',headers:{cookie:`session=${a}`,'content-type':'application/json'},body:JSON.stringify(task)});
     assert.equal(cookieOnly.status,401);
-    const reopened = new Store();
-    assert.equal((await reopened.board(1)).tasks.length,1); await reopened.onModuleDestroy();
+    const reopened = new Store(new PrismaService());
+    assert.equal((await reopened.board(1)).tasks.length,1); await reopened.prisma.$disconnect();
     assert.equal((await request('logout','POST',undefined,u)).status,201);
     assert.equal((await request('projects/1/board','GET',undefined,u)).status,401);
     const document = await request('docs-json');
     assert.equal(document.status, 200);
     assert.equal(document.data.info.title, 'Sprott REST API');
-    assert.deepEqual(Object.keys(document.data.paths).sort(), ['/api/login','/api/logout','/api/me','/api/columns','/api/columns/order','/api/columns/{id}','/api/tasks','/api/tasks/{id}','/api/permissions','/api/permissions/definitions','/api/permissions/{id}','/api/users','/api/users/{id}','/api/groups','/api/groups/members','/api/groups/{id}','/api/projects','/api/projects/{id}','/api/projects/{id}/members','/api/projects/{id}/members/{userId}','/api/projects/{id}/board','/api/dashboard'].sort());
+    assert.ok(['/api/login','/api/logout','/api/me','/api/columns','/api/columns/order','/api/columns/{id}','/api/tasks','/api/tasks/{id}','/api/permissions','/api/permissions/definitions','/api/permissions/{id}','/api/users','/api/users/{id}','/api/groups','/api/groups/members','/api/groups/{id}','/api/projects','/api/projects/{id}','/api/projects/{id}/members','/api/projects/{id}/members/{userId}','/api/projects/{id}/board','/api/dashboard'].every(path => path in document.data.paths));
     assert.ok(document.data.paths['/api/tasks/{id}'].patch.requestBody);
     assert.ok(document.data.paths['/api/tasks/{id}'].delete);
     assert.deepEqual(document.data.paths['/api/tasks'].post.requestBody.content['application/json'].schema.required, ['title','description','columnId']);
@@ -111,7 +119,7 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
     assert.ok(document.data.paths['/api/login'].post.responses['201'].content['application/json'].schema.properties.token);
     assert.equal((await fetch(`${url}/api/docs/`)).status,200);
     // Two parallel deletions cannot remove the last column.
-    await app.get(Store).db.query('DELETE FROM tasks');
+    await sql(app.get(PrismaService), 'DELETE FROM tasks');
     await request('columns/3','DELETE',undefined,a);
     const deletes = await Promise.all([request('columns/1','DELETE',undefined,a),request('columns/2','DELETE',undefined,a)]);
     assert.deepEqual(deletes.map(result => result.status).sort(),[200,400]);

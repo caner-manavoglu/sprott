@@ -1,0 +1,433 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../server/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ActivityLog {
+  id        BigInt   @id @default(autoincrement())
+  projectId Int
+  taskId    Int?
+  taskTitle String
+  action    String
+  detail    String?
+  actorId   Int?
+  actorName String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  user      User?    @relation(fields: [actorId], references: [id], onUpdate: NoAction)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([projectId, createdAt], map: "activity_log_project_idx")
+  @@index([taskId], map: "activity_log_task_idx")
+  @@map("activity_log")
+}
+
+model AnnouncementGroup {
+  announcementId Int
+  groupId        Int
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  group          Group        @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([announcementId, groupId])
+  @@map("announcement_groups")
+}
+
+model AnnouncementRead {
+  announcementId Int
+  userId         Int
+  readAt         DateTime     @default(now()) @db.Timestamptz(6)
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([announcementId, userId])
+  @@map("announcement_reads")
+}
+
+model Announcement {
+  id            Int                 @id @default(autoincrement())
+  title         String
+  body          String
+  mandatory     Boolean             @default(false)
+  imageName     String?
+  imageMimeType String?
+  imageSize     Int?
+  imageContent  Bytes?
+  createdBy     Int?
+  createdAt     DateTime            @default(now()) @db.Timestamptz(6)
+  groups        AnnouncementGroup[]
+  reads         AnnouncementRead[]
+  author        User?               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+  notifications Notification[]
+
+  @@index([createdAt(sort: Desc)], map: "announcements_created_idx")
+  @@map("announcements")
+}
+
+model Column {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  position            Int
+  projectId           Int
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  task                Task[]
+  outgoingTransitions WorkflowTransition[] @relation("workflow_transitions_fromColumnIdTocolumns")
+  incomingTransitions WorkflowTransition[] @relation("workflow_transitions_toColumnIdTocolumns")
+
+  @@index([projectId], map: "columns_project_idx")
+  @@map("columns")
+}
+
+model ForumFile {
+  id           Int          @id @default(autoincrement())
+  messageId    Int
+  name         String
+  mimeType     String
+  size         Int
+  content      Bytes
+  forumMessage ForumMessage @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([messageId], map: "forum_files_message")
+  @@map("forum_files")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ForumMember {
+  forumId Int
+  userId  Int
+  status  String
+  forum   Forum  @relation(fields: [forumId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([forumId, userId])
+  @@map("forum_members")
+}
+
+model ForumMessageHidden {
+  messageId    Int
+  userId       Int
+  forumMessage ForumMessage @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([messageId, userId])
+  @@map("forum_message_hidden")
+}
+
+model ForumMessageReceipt {
+  messageId    Int
+  userId       Int
+  deliveredAt  DateTime?    @db.Timestamptz(6)
+  readAt       DateTime?    @db.Timestamptz(6)
+  forumMessage ForumMessage @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([messageId, userId])
+  @@index([userId, messageId], map: "forum_receipts_pending", where: raw("(\"deliveredAt\" IS NULL)"))
+  @@map("forum_message_receipts")
+}
+
+model ForumMessage {
+  id                  Int                   @id @default(autoincrement())
+  forumId             Int
+  authorId            Int?
+  body                String                @default("")
+  createdAt           DateTime              @default(now()) @db.Timestamptz(6)
+  editedAt            DateTime?             @db.Timestamptz(6)
+  deletedAt           DateTime?             @db.Timestamptz(6)
+  receiptsInitialized Boolean               @default(false)
+  files               ForumFile[]
+  hiddenBy            ForumMessageHidden[]
+  receipts            ForumMessageReceipt[]
+  author              User?                 @relation(fields: [authorId], references: [id], onUpdate: NoAction)
+  forum               Forum                 @relation(fields: [forumId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([forumId, id(sort: Desc)], map: "forum_messages_page")
+  @@map("forum_messages")
+}
+
+model Forum {
+  id            Int            @id @default(autoincrement())
+  name          String
+  description   String         @default("")
+  createdBy     Int?
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+  imageContent  Bytes?
+  imageMimeType String?
+  imageVersion  Int            @default(0)
+  members       ForumMember[]
+  messages      ForumMessage[]
+  creator       User?          @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@map("forums")
+}
+
+model GroupManager {
+  groupId Int
+  userId  Int
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([groupId, userId])
+  @@index([userId], map: "group_managers_user_idx")
+  @@map("group_managers")
+}
+
+model GroupMember {
+  groupId Int
+  userId  Int
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([groupId, userId])
+  @@index([userId], map: "group_members_user_idx")
+  @@map("group_members")
+}
+
+model Group {
+  id            Int                 @id @default(autoincrement())
+  name          String              @unique
+  announcements AnnouncementGroup[]
+  managers      GroupManager[]
+  members       GroupMember[]
+
+  @@map("groups")
+}
+
+model McpToken {
+  token      String    @id
+  userId     Int
+  expires    BigInt
+  id         Int       @unique @default(autoincrement())
+  name       String    @default("Eski bağlantı")
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  lastUsedAt DateTime? @db.Timestamptz(6)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("mcp_tokens")
+}
+
+model Notification {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  type           String
+  taskId         Int?
+  actorId        Int?
+  readAt         DateTime?     @db.Timestamptz(6)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
+  announcementId Int?
+  actor          User?         @relation("notifications_actorIdTousers", fields: [actorId], references: [id], onUpdate: NoAction)
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  task           Task?         @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           User          @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, readAt, createdAt(sort: Desc)], map: "notifications_user_idx")
+  @@map("notifications")
+}
+
+model ProjectMember {
+  projectId Int
+  userId    Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([projectId, userId])
+  @@map("project_members")
+}
+
+model Project {
+  id           Int                  @id @default(autoincrement())
+  name         String
+  description  String               @default("")
+  createdBy    Int?
+  startDate    DateTime?            @db.Date
+  endDate      DateTime?            @db.Date
+  completedAt  DateTime?            @db.Timestamptz(6)
+  activityLog  ActivityLog[]
+  columns      Column[]
+  members      ProjectMember[]
+  creator      User?                @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pullRequests PullRequest[]
+  transitions  WorkflowTransition[]
+
+  @@map("projects")
+}
+
+model PullRequestTask {
+  pullRequestId BigInt
+  taskId        Int
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  task          Task        @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([pullRequestId, taskId])
+  @@index([taskId], map: "pull_request_tasks_task_idx")
+  @@map("pull_request_tasks")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model PullRequest {
+  id          BigInt            @id @default(autoincrement())
+  projectId   Int
+  url         String
+  title       String
+  description String            @default("")
+  state       String            @default("open")
+  mergedAt    DateTime?         @db.Timestamptz(6)
+  mergedBy    Int?
+  createdBy   Int?
+  createdAt   DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @db.Timestamptz(6)
+  tasks       PullRequestTask[]
+  creator     User?             @relation("pull_requests_createdByTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  merger      User?             @relation("pull_requests_mergedByTousers", fields: [mergedBy], references: [id], onUpdate: NoAction)
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([projectId, url])
+  @@index([projectId, createdAt], map: "pull_requests_open_idx", where: raw("(state = 'open'::text)"))
+  @@map("pull_requests")
+}
+
+model Session {
+  token   String @id
+  userId  Int
+  expires BigInt
+  user    User   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("sessions")
+}
+
+model TaskAttachment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  name      String
+  mimeType  String
+  size      Int
+  content   Bytes
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([taskId], map: "task_attachments_task_idx")
+  @@map("task_attachments")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model TaskCommentAttachment {
+  id          Int         @id @default(autoincrement())
+  commentId   Int
+  name        String
+  mimeType    String
+  size        Int
+  content     Bytes
+  taskComment TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("task_comment_attachments")
+}
+
+model TaskCommentMention {
+  commentId   Int
+  userId      Int
+  taskComment TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([commentId, userId])
+  @@map("task_comment_mentions")
+}
+
+model TaskComment {
+  id          Int                     @id @default(autoincrement())
+  taskId      Int
+  authorId    Int
+  body        String
+  createdAt   DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime                @default(now()) @db.Timestamptz(6)
+  attachments TaskCommentAttachment[]
+  mentions    TaskCommentMention[]
+  author      User                    @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  task        Task                    @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([taskId, createdAt], map: "task_comments_task_idx")
+  @@map("task_comments")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Task {
+  id            Int               @id @default(autoincrement())
+  title         String
+  description   String
+  columnId      Int
+  createdBy     Int
+  assigneeId    Int?
+  startDate     DateTime?         @db.Date
+  dueDate       DateTime?         @db.Date
+  type          String            @default("task")
+  parentTaskId  Int?
+  priority      String            @default("normal")
+  notifications Notification[]
+  pullRequests  PullRequestTask[]
+  attachments   TaskAttachment[]
+  comments      TaskComment[]
+  assignee      User?             @relation("tasks_assigneeIdTousers", fields: [assigneeId], references: [id], onUpdate: NoAction)
+  column        Column            @relation(fields: [columnId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reporter      User              @relation("tasks_createdByTousers", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent        Task?             @relation("tasksTotasks", fields: [parentTaskId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtasks      Task[]            @relation("tasksTotasks")
+
+  @@index([assigneeId], map: "tasks_assignee_idx")
+  @@index([columnId], map: "tasks_column_idx")
+  @@index([dueDate], map: "tasks_due_idx", where: raw("(\"dueDate\" IS NOT NULL)"))
+  @@index([parentTaskId], map: "tasks_parent_idx", where: raw("(\"parentTaskId\" IS NOT NULL)"))
+  @@map("tasks")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model User {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  email               String                @unique
+  password            String
+  role                String
+  permissions         Json                  @default("{}")
+  surname             String                @default("")
+  title               String                @default("")
+  avatarMimeType      String?
+  avatarContent       Bytes?
+  activityLog         ActivityLog[]
+  announcementReads   AnnouncementRead[]
+  announcement        Announcement[]
+  forumMemberships    ForumMember[]
+  hiddenMessages      ForumMessageHidden[]
+  messageReceipts     ForumMessageReceipt[]
+  forumMessages       ForumMessage[]
+  forum               Forum[]
+  managedGroups       GroupManager[]
+  groupMemberships    GroupMember[]
+  mcpTokens           McpToken[]
+  sentNotifications   Notification[]        @relation("notifications_actorIdTousers")
+  notifications       Notification[]        @relation("notifications_userIdTousers")
+  projectMemberships  ProjectMember[]
+  project             Project[]
+  createdPullRequests PullRequest[]         @relation("pull_requests_createdByTousers")
+  mergedPullRequests  PullRequest[]         @relation("pull_requests_mergedByTousers")
+  sessions            Session[]
+  commentMentions     TaskCommentMention[]
+  comments            TaskComment[]
+  assignedTasks       Task[]                @relation("tasks_assigneeIdTousers")
+  createdTasks        Task[]                @relation("tasks_createdByTousers")
+
+  @@map("users")
+}
+
+model WorkflowTransition {
+  projectId    Int
+  fromColumnId Int
+  toColumnId   Int
+  fromColumn   Column  @relation("workflow_transitions_fromColumnIdTocolumns", fields: [fromColumnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  toColumn     Column  @relation("workflow_transitions_toColumnIdTocolumns", fields: [toColumnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([projectId, fromColumnId, toColumnId])
+  @@map("workflow_transitions")
+}

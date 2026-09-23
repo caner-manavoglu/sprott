@@ -60,6 +60,7 @@ export function App() {
   const [logProject, setLogProject] = useState<number | null>(null);
   const [logTask, setLogTask] = useState<number | null>(null);
   const [logActor, setLogActor] = useState<number | null>(null);
+  const [logSize, setLogSize] = useState(10);
   const [users, setUsers] = useState<User[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [people, setPeople] = useState<User[]>([]);
@@ -278,6 +279,7 @@ export function App() {
           setLogProject(feedLog.projectId);
           setLogTask(null);
           setLogActor(null);
+          setLogSize(feedLog.pageSize);
           break;
         }
         case 'notifications':
@@ -425,13 +427,14 @@ export function App() {
   };
 
   /** Günlük sorgusu; verilmeyen filtreler mevcut seçimden okunur, filtre değişince sayfa 1'e döner. */
-  const loadLogs = (change: {projectId?: number; taskId?: number | null; actorId?: number | null; page?: number}) => {
+  const loadLogs = (change: {projectId?: number; taskId?: number | null; actorId?: number | null; page?: number; pageSize?: number}) => {
     const projectId = change.projectId ?? logProject;
     const taskId = 'projectId' in change ? null : change.taskId !== undefined ? change.taskId : logTask;
     const actorId = 'projectId' in change ? null : change.actorId !== undefined ? change.actorId : logActor;
     const page = change.page ?? 1;
     return `logs?projectId=${projectId ?? ''}${taskId ? `&taskId=${taskId}` : ''}`
-      + `${actorId ? `&actorId=${actorId}` : ''}${page > 1 ? `&page=${page}` : ''}`;
+      + `${actorId ? `&actorId=${actorId}` : ''}${page > 1 ? `&page=${page}` : ''}`
+      + `&pageSize=${change.pageSize ?? logSize}`;
   };
 
   /** PR ekranının verisini tazeler; pano açıksa kartlardaki rozet de güncellenir. */
@@ -637,7 +640,12 @@ export function App() {
             setLogActor(actorId);
             void run(async () => setLog(await api<ActivityLog>(loadLogs({actorId}))));
           }}
-          onPage={page => void run(async () => setLog(await api<ActivityLog>(loadLogs({page}))))}/>
+          onPage={page => void run(async () => setLog(await api<ActivityLog>(loadLogs({page}))))}
+          onPageSize={pageSize => {
+            // Boyut değişince sayfa 1'e döner; aksi halde son sayfanın ötesine düşülebilir.
+            setLogSize(pageSize);
+            void run(async () => setLog(await api<ActivityLog>(loadLogs({pageSize}))));
+          }}/>
       </div>}
 
       {route.page === 'notifications' && <div className="page-body">
@@ -790,13 +798,14 @@ export function App() {
         ...current,
         columns: columnIds.map(id => current.columns.find(column => column.id === id)!).filter(Boolean),
       }))}
-      onReorder={columnIds => {
-        const snapshot = board.columns;
-        return run(async () => {
-          try { setBoard(await api<Board>('columns/order', 'PATCH', {columnIds})); }
-          catch (err) { setBoard(current => ({...current, columns: snapshot})); throw err; }
-        });
-      }}
+      onReorder={columnIds => run(async () => {
+        try { setBoard(await api<Board>('columns/order', 'PATCH', {columnIds})); }
+        catch (err) {
+          // Önizleme panoyu zaten değiştirdiği için yerel anlık görüntü güvenilmez; gerçek sıra sunucudan alınır.
+          if (board.project) setBoard(await api<Board>(`projects/${board.project.id}/board`));
+          throw err;
+        }
+      })}
       onRename={(columnId, name) => void run(async () => setBoard(await api<Board>(`columns/${columnId}`, 'PATCH', {name})))}
       onRemove={columnId => void run(async () => setBoard(await api<Board>(`columns/${columnId}`, 'DELETE')))}
       onCreate={(name, done) => void run(async () => {

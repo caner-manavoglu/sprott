@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
 import { PullRequestsController } from './pull-requests.controller.ts';
-@Module({controllers: [PullRequestsController]})
-export class PullRequestsModule {}
+import { PullRequestsService } from './pull-requests.service.ts';
+@Module({ providers: [PullRequestsService], controllers: [PullRequestsController] })
+export class PullRequestsModule { }

@@ -1,7 +1,7 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
 import { createHash } from 'node:crypto';
-import { can, type Permission, type User } from '../store.ts';
+import { can, type Permission, type User } from '../common/fields.ts';
 
 export type AuthRequest = Request & { user?: User };
 /** Oturum anahtarları veritabanında yalnızca özet olarak tutulur. */

@@ -253,4 +253,5 @@ export type ActivityLog = {
   total: number;
   page: number;
   pageSize: number;
+  pageSizes: number[];
 };

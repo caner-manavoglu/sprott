@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Check, CheckCheck, Clock, ImagePlus, MessageCircle, Paperclip, Pencil, Plus, Send, Trash2, UserPlus, Users } from 'lucide-react';
 import { api, fileBody } from '../api';
 import { Avatar } from '../components/avatar';
@@ -15,6 +15,12 @@ type Person = User & {status: 'pending' | 'joined' | null};
 type Receipt = Pick<User,'id' | 'name' | 'surname' | 'hasAvatar'> & {deliveredAt: string | null; readAt: string | null};
 type Message = {id: number; body: string; authorId: number | null; name: string; surname: string; hasAvatar: boolean; createdAt: string; editedAt: string | null; deletedAt: string | null; hidden: boolean; myReadAt: string | null; isRecipient: boolean; files: Attachment[]; receipts: {total: number; delivered: number; read: number} | null};
 const dateTime = (value: string) => new Date(value).toLocaleString('tr-TR');
+const dayLabel = new Intl.DateTimeFormat('tr-TR', {day: 'numeric', month: 'long', year: 'numeric'});
+/** Bugün/dün okunur yazılır, öncesi tam tarih. */
+const day = (value: string) => {
+  const date = new Date(value), today = new Date(), diff = Math.round((+new Date(today.toDateString()) - +new Date(date.toDateString())) / 86400000);
+  return diff === 0 ? 'Bugün' : diff === 1 ? 'Dün' : dayLabel.format(date);
+};
 
 export function ForumsPage({user}: {user: User}) {
   const [forums, setForums] = useState<Forum[]>([]);
@@ -175,27 +181,35 @@ export function ForumsPage({user}: {user: User}) {
                 requestAnimationFrame(() => {if (area) area.scrollTop = top + area.scrollHeight - height;});
               })}>Önceki mesajlar</Button>}
               {!messages.some(message => !message.hidden) && <p className="muted">{loading ? 'Mesajlar yükleniyor…' : 'İlk mesajı veya toplantı notunu paylaşın.'}</p>}
-              {messages.filter(message => !message.hidden).map(message => {
+              {messages.filter(message => !message.hidden).map((message, index, list) => {
                 const mine = message.authorId === user.id, status = message.receipts;
+                const previous = list[index - 1];
+                const newDay = !previous || day(previous.createdAt) !== day(message.createdAt);
+                // Aynı kişinin 5 dakika içindeki ardışık mesajlarında başlık tekrar edilmez.
+                const grouped = !newDay && !!previous && previous.authorId === message.authorId
+                  && +new Date(message.createdAt) - +new Date(previous.createdAt) < 5 * 60000;
                 const allRead = !!status && status.total > 0 && status.read === status.total;
                 const allDelivered = !!status && status.total > 0 && status.delivered === status.total;
-                return <article key={message.id} data-message-id={message.id} data-unread={message.isRecipient && !mine && !message.myReadAt && !message.deletedAt} className={'forum-message' + (mine ? ' mine' : '')}>
-                  <div className="forum-message-author"><Avatar person={{id:message.authorId ?? 0,name:message.name,surname:message.surname,hasAvatar:message.hasAvatar}}/><strong>{fullName(message)}</strong><time title={dateTime(message.createdAt)}>{new Date(message.createdAt).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</time></div>
+                return <Fragment key={message.id}>
+                  {newDay && <div className="forum-day"><span>{day(message.createdAt)}</span></div>}
+                  <article data-message-id={message.id} data-unread={message.isRecipient && !mine && !message.myReadAt && !message.deletedAt} className={'forum-message' + (mine ? ' mine' : '') + (grouped ? ' grouped' : '')}>
+                  {!grouped && <div className="forum-message-author"><Avatar person={{id:message.authorId ?? 0,name:message.name,surname:message.surname,hasAvatar:message.hasAvatar}}/><strong>{fullName(message)}</strong><time title={dateTime(message.createdAt)}>{new Date(message.createdAt).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</time></div>}
                   {message.deletedAt ? <p className="forum-deleted"><Trash2 size={13}/> Bu mesaj silindi.</p> : <>
                     {message.body && <p>{message.body}</p>}
                     {message.files.map(file => <ForumFile key={file.id} forumId={forum.id} file={file}/>)}
                   </>}
                   <div className="forum-message-footer">
                     {message.editedAt && !message.deletedAt && <small title={dateTime(message.editedAt)}>Düzenlendi</small>}
-                    {mine && !message.deletedAt && <button className={'forum-receipt-button' + (allRead ? ' read' : '')} title="Mesaj bilgisi" onClick={() => void run(async () => {
+                    {mine && !message.deletedAt && <button className={'forum-receipt-button' + (allRead ? ' read' : '')} onClick={() => void run(async () => {
                       setReceipts(await api<Receipt[]>('forums/' + selected + '/messages/' + message.id + '/receipts')); setReceiptMessage(message.id);
-                    })}>{allRead || allDelivered ? <CheckCheck size={16}/> : <Check size={16}/>}<span>{status?.delivered ?? 0} iletildi · {status?.read ?? 0} görüldü</span></button>}
+                    })} title={(status?.delivered ?? 0) + ' iletildi · ' + (status?.read ?? 0) + ' görüldü'}>{allRead || allDelivered ? <CheckCheck size={15}/> : <Check size={15}/>}<span>{status?.read ?? 0}/{status?.total ?? 0}</span></button>}
                     <div className="forum-message-actions">
                       {mine && !message.deletedAt && <button aria-label="Mesajı düzenle" title="Düzenle" disabled={busy} onClick={() => setEditing(message)}><Pencil size={14}/></button>}
                       <button aria-label="Mesajı sil" title="Sil" disabled={busy} onClick={() => setDeleteMessage(message)}><Trash2 size={14}/></button>
                     </div>
                   </div>
-                </article>;
+                </article>
+                </Fragment>;
               })}
             </div>
             <form ref={composer} className="forum-composer" onSubmit={event => {

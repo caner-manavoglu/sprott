@@ -5,3 +5,4 @@ data/
 *.log
 .playwright-mcp/
 .DS_Store
+server/generated/prisma/

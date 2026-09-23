@@ -25,13 +25,14 @@ type Props = {
   onTask: (taskId: number | null) => void;
   onActor: (actorId: number | null) => void;
   onPage: (page: number) => void;
+  onPageSize: (pageSize: number) => void;
 };
 
 /**
  * Etkinlik günlüğü. Salt okunur: listeleme dışında bir işlem yoktur.
  * Kayıtlar yeniden eskiye sıralıdır ve sunucudan sayfa sayfa gelir.
  */
-export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor, onPage}: Props) {
+export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor, onPage, onPageSize}: Props) {
   if (log && !log.projects.length) {
     return <div className="empty-panel"><div><ScrollText size={22}/></div><strong>Görüntülenecek proje yok</strong>
       <span>Bir projeye eklendiğinizde o projenin günlüğü burada görünür.</span></div>;
@@ -39,7 +40,8 @@ export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor
 
   const total = log?.total ?? 0;
   const page = log?.page ?? 1;
-  const pages = Math.max(1, Math.ceil(total / (log?.pageSize || 50)));
+  const pageSize = log?.pageSize || 10;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return <div className="permissions-panel">
     <div className="permissions-heading">
@@ -80,14 +82,22 @@ export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor
 
     <div className="permissions-foot">
       <ScrollText size={14}/> {total} kayıt · yeniden eskiye sıralı{pages > 1 && ` · sayfa ${page}/${pages}`}.
-      {pages > 1 && <div className="pager">
+      <div className="pager">
+        <label className="pager-size">Satır
+          <select value={pageSize} disabled={busy} aria-label="Sayfa başına kayıt"
+            onChange={event => onPageSize(Number(event.target.value))}>
+            {(log?.pageSizes ?? [10, 20, 50]).map(size => <option key={size} value={size}>{size}</option>)}
+          </select>
+        </label>
+        {pages > 1 && <>
         <button type="button" disabled={busy || page <= 1} onClick={() => onPage(page - 1)} aria-label="Önceki sayfa">
           <ChevronLeft size={15}/>
         </button>
         <button type="button" disabled={busy || page >= pages} onClick={() => onPage(page + 1)} aria-label="Sonraki sayfa">
           <ChevronRight size={15}/>
         </button>
-      </div>}
+        </>}
+      </div>
     </div>
   </div>;
 }
