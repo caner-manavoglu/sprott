@@ -133,7 +133,7 @@ export function App() {
   useEffect(() => {
     const theme = dark ? 'dark' : 'light';
     document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#121a17' : '#176b52');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#100e14' : '#6a1bf7');
     try { localStorage.setItem('sprott-theme', theme); } catch { /* Tema, depolama kapalıyken de çalışır. */ }
   }, [dark]);
 

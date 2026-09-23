@@ -3,7 +3,7 @@
    Sıra önemlidir: aşağıdaki kurallar yukarıdakileri bilinçli olarak ezer. */
 
 /* Yüzeyler. */
-:root[data-theme="dark"] :is(.sidebar, .kanban-column, .login-tabs, th) { background: #16211b; }
+:root[data-theme="dark"] :is(.sidebar, .kanban-column, .login-tabs, th) { background: #1a1522; }
 
 :root[data-theme="dark"] :is(.workspace, .task-card) {
   background: var(--surface);
@@ -45,9 +45,9 @@
   color: var(--muted-foreground);
 }
 
-:root[data-theme="dark"] .task-code > svg { color: #91a298; }
+:root[data-theme="dark"] .task-code > svg { color: #9a9a9a; }
 
-:root[data-theme="dark"] :is(input, textarea)::placeholder { color: #8e9e94; }
+:root[data-theme="dark"] :is(input, textarea)::placeholder { color: #969696; }
 
 /* Vurgular. */
 :root[data-theme="dark"] :is(.view-tab, .login-tabs button[aria-pressed="true"]) {
@@ -109,7 +109,7 @@
 }
 
 :root[data-theme="dark"] .people-name {
-  background: #0c120f;
+  background: #0e0c12;
   color: var(--foreground);
 }
 
@@ -148,8 +148,8 @@
 :root[data-theme="dark"] :is(.permission-summary, .permission-group h3) { color: var(--muted-foreground); }
 :root[data-theme="dark"] .drag-handle { color: var(--muted-foreground); }
 
-:root[data-theme="dark"] .switch-track { background: #526358; }
-:root[data-theme="dark"] .switch-label input:checked + .switch-track { background: #438d67; }
+:root[data-theme="dark"] .switch-track { background: #5a5a5a; }
+:root[data-theme="dark"] .switch-label input:checked + .switch-track { background: #5d3d93; }
 
 :root[data-theme="dark"] .error {
   border-color: #74473f;
@@ -157,7 +157,7 @@
   color: #ffb4a9;
 }
 
-:root[data-theme="dark"] .board-scroll { scrollbar-color: #405749 #16211b; }
+:root[data-theme="dark"] .board-scroll { scrollbar-color: #4c4c4c #1a1522; }
 
 /* Kenar çubuğu açma/kapama düğmeleri. */
 :root[data-theme="dark"] .sidebar-toggle { color: var(--muted-foreground); }

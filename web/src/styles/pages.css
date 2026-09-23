@@ -33,13 +33,13 @@
 .dashboard-metric > div > span { overflow: hidden; margin-top: 5px; color: var(--muted-foreground); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-metric.danger .dashboard-metric-icon { background: var(--late-soft); color: var(--late); }
 
-.dashboard-completion { display: grid; place-items: center; align-content: center; gap: 15px; padding: 24px; background: linear-gradient(145deg, #176b52, #22916d); color: #fff; text-align: center; }
+.dashboard-completion { display: grid; place-items: center; align-content: center; gap: 15px; padding: 24px; background: linear-gradient(145deg, #6a1bf7, #481a99); color: #fff; text-align: center; }
 .dashboard-donut { --completion: 0deg; display: grid; place-items: center; width: 132px; height: 132px; border-radius: 50%; background: conic-gradient(#fff var(--completion), #ffffff32 0); }
-.dashboard-donut:before { content: ''; grid-area: 1 / 1; width: 100px; height: 100px; border-radius: 50%; background: #1c765a; }
+.dashboard-donut:before { content: ''; grid-area: 1 / 1; width: 100px; height: 100px; border-radius: 50%; background: #3b157d; }
 .dashboard-donut > span { z-index: 1; grid-area: 1 / 1; }
 .dashboard-donut strong, .dashboard-donut small, .dashboard-completion > div:last-child > * { display: block; }
 .dashboard-donut strong { font-size: 25px; }
-.dashboard-donut small, .dashboard-completion span { margin-top: 3px; color: #d9f2e7; font-size: 9px; }
+.dashboard-donut small, .dashboard-completion span { margin-top: 3px; color: #e2d7f4; font-size: 9px; }
 .dashboard-completion > div:last-child > strong { font-size: 12px; }
 
 .dashboard-content { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: 13px 20px; }
@@ -50,7 +50,7 @@
 .dashboard-project-grid { display: grid; grid-column: 1; grid-row: 2; grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr)); gap: 14px; min-width: 0; }
 
 .dashboard-project-card { overflow: hidden; border: 1px solid var(--input); border-radius: 14px; background: var(--background); transition: border-color .15s, transform .15s, box-shadow .15s; }
-.dashboard-project-card:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--input)); transform: translateY(-2px); box-shadow: 0 10px 30px #173d2910; }
+.dashboard-project-card:hover { border-color: color-mix(in srgb, var(--primary) 55%, var(--input)); transform: translateY(-2px); box-shadow: 0 10px 30px #24144010; }
 .dashboard-project-card > header { display: flex; align-items: center; gap: 11px; padding: 17px 18px 14px; }
 .dashboard-project-icon { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border-radius: 10px; background: var(--accent); color: var(--primary); }
 .dashboard-project-card > header > div { flex: 1; min-width: 0; }
@@ -72,11 +72,11 @@
 .dashboard-column-row > div { min-width: 0; }
 .dashboard-column-row strong { font-size: 10px; font-weight: 550; }
 .dashboard-column-row progress { height: 4px; margin-top: 6px; }
-.dashboard-column-row progress::-webkit-progress-value { background: #8da59a; }
-.dashboard-column-row progress::-moz-progress-bar { background: #8da59a; }
+.dashboard-column-row progress::-webkit-progress-value { background: #999999; }
+.dashboard-column-row progress::-moz-progress-bar { background: #999999; }
 .dashboard-column-row progress.done::-webkit-progress-value { background: var(--primary); }
 .dashboard-column-row progress.done::-moz-progress-bar { background: var(--primary); }
-.dashboard-column-dot { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #8da59a; box-shadow: 0 0 0 3px color-mix(in srgb, #8da59a 17%, transparent); }
+.dashboard-column-dot { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #999999; box-shadow: 0 0 0 3px color-mix(in srgb, #999999 17%, transparent); }
 .dashboard-column-dot.done { background: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 17%, transparent); }
 .dashboard-task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
 .dashboard-task-tags span { overflow: hidden; max-width: 150px; padding: 3px 6px; border-radius: 5px; background: var(--accent); color: var(--muted-foreground); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
@@ -104,7 +104,7 @@
 .dashboard-clear-state span { color: var(--muted-foreground); font-size: 10px; }
 
 .summary-card {
-  border: 1px solid #e3e9df;
+  border: 1px solid #e2deea;
   border-radius: 11px;
   overflow: hidden;
 }
@@ -125,14 +125,14 @@
 .summary-card header p {
   margin-top: 5px;
   font-size: 11px;
-  color: #919a8b;
+  color: #929292;
 }
 
 .summary-column {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6d786e;
+  color: #727272;
 }
 
 .summary-column strong { font-weight: 550; }
@@ -145,24 +145,24 @@
   gap: 7px;
   margin: 0 36px;
   padding: 46px 20px;
-  border: 1px dashed #dbe3d8;
+  border: 1px dashed #dcd7e4;
   border-radius: 11px;
   text-align: center;
-  color: #98a293;
+  color: #9a9a9a;
 }
 
 .empty-panel > div {
   margin-bottom: 6px;
   padding: 13px;
   border-radius: 12px;
-  background: #eef4ea;
-  color: #65865c;
+  background: #ede9f5;
+  color: #6b5989;
 }
 
 .empty-panel strong {
   font-size: 13px;
   font-weight: 600;
-  color: #6d786e;
+  color: #727272;
 }
 
 .empty-panel span { font-size: 11px; }
@@ -170,7 +170,7 @@
 /* Tablo taşıyan paneller: yetkiler, kullanıcılar, gruplar, raporlar. */
 .permissions-panel {
   margin: 0 36px 30px;
-  border: 1px solid #e3e9df;
+  border: 1px solid #e2deea;
   border-radius: 11px;
   overflow: auto;
 }
@@ -190,7 +190,7 @@
 .permissions-heading p {
   margin-top: 5px;
   font-size: 11px;
-  color: #919a8b;
+  color: #929292;
 }
 
 .permission-icon {
@@ -199,17 +199,17 @@
   width: 42px;
   height: 42px;
   border-radius: 9px;
-  background: #eef4ea;
-  color: #65865c;
+  background: #ede9f5;
+  color: #6b5989;
 }
 
 .report-total {
   margin-left: auto;
   padding: 6px 10px;
-  border: 1px solid #dcead8;
+  border: 1px solid #ded7eb;
   border-radius: 6px;
-  background: #eef5ec;
-  color: #5d8267;
+  background: #efebf6;
+  color: #6a5a85;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -232,16 +232,16 @@ table {
 
 th {
   padding: 12px 24px;
-  border-block: 1px solid #e8ede4;
-  background: #f8faf6;
+  border-block: 1px solid #e7e3ee;
+  background: #f7f6fa;
   font-size: 10px;
   font-weight: 500;
-  color: #8c9884;
+  color: #8e8e8e;
 }
 
 td {
   padding: 21px 24px;
-  border-bottom: 1px solid #edf0e9;
+  border-bottom: 1px solid #ebe8f1;
   font-size: 12px;
 }
 
@@ -262,22 +262,22 @@ td {
   display: block;
   margin-top: 4px;
   font-size: 10px;
-  color: #99a18f;
+  color: #989898;
 }
 
 .person-role {
   padding: 5px 9px;
-  border: 1px solid #e5e9df;
+  border: 1px solid #e2deea;
   border-radius: 5px;
-  background: #f8faf5;
-  color: #88947e;
+  background: #f7f5fa;
+  color: #898989;
   font-size: 10px;
 }
 
 .person-role.admin {
-  border-color: #dcead8;
-  background: #eef5ec;
-  color: #5d8267;
+  border-color: #ded7eb;
+  background: #efebf6;
+  color: #6a5a85;
 }
 
 /* Yetki anahtarı: gizli onay kutusu + boyanan ray. */
@@ -287,7 +287,7 @@ td {
   align-items: center;
   gap: 9px;
   font-size: 10px;
-  color: #8a9581;
+  color: #8b8b8b;
 }
 
 .switch-label input {
@@ -303,7 +303,7 @@ td {
   width: 32px;
   height: 18px;
   border-radius: 20px;
-  background: #dce3d7;
+  background: #dbd6e4;
   pointer-events: none;
   transition: background .15s;
 }
@@ -320,12 +320,12 @@ td {
   transition: transform .15s;
 }
 
-.switch-label input:checked + .switch-track { background: #397e5e; }
+.switch-label input:checked + .switch-track { background: #513483; }
 .switch-label input:checked + .switch-track:before { transform: translateX(14px); }
 .switch-label input:disabled + .switch-track { opacity: .45; }
 
 .switch-label input:focus-visible + .switch-track {
-  outline: 2px solid #308e70;
+  outline: 2px solid #5811d6;
   outline-offset: 3px;
 }
 
@@ -335,7 +335,7 @@ td {
   gap: 7px;
   padding: 16px 24px;
   font-size: 10px;
-  color: #94a08a;
+  color: #959595;
 }
 
 /* Yetki tablosundaki modül etiketleri. */
@@ -353,17 +353,17 @@ td {
   align-items: center;
   gap: 5px;
   padding: 4px 8px;
-  border: 1px solid #e0e8dd;
+  border: 1px solid #e1dce9;
   border-radius: 5px;
-  background: #f5f8f3;
-  color: #5d8267;
+  background: #f5f3f8;
+  color: #6a5a85;
   cursor: default;
   font-size: 10px;
 }
 
 .permission-summary {
   font-size: 10px;
-  color: #8a9581;
+  color: #8b8b8b;
 }
 
 .project-cell {
@@ -381,13 +381,13 @@ td {
   font-size: 10px;
   line-height: 1.6;
   white-space: normal;
-  color: #99a18f;
+  color: #989898;
 }
 
 .assignee-line {
   margin-top: 10px;
   font-size: 11px;
-  color: #8a9581;
+  color: #8b8b8b;
 }
 
 .row-actions {
@@ -417,7 +417,7 @@ td {
   align-items: center;
   gap: 10px;
   padding: 9px 10px;
-  border: 1px solid #e6eae5;
+  border: 1px solid #e8e8e8;
   border-radius: 9px;
 }
 
@@ -448,7 +448,7 @@ td {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 10px;
-  color: #99a18f;
+  color: #989898;
 }
 
 .member-row > button { flex-shrink: 0; }
@@ -783,7 +783,7 @@ td {
 .permission-tag > small {
   padding: 1px 5px;
   border-radius: 20px;
-  background: #e6efe3;
+  background: #e7e2f0;
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }

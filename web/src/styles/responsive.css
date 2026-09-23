@@ -79,7 +79,7 @@
   }
 
   /* Şeritte seçili modülü ayırt etmek için dolgu geri gelir. */
-  .sidebar nav button.active { background: #e9f1e9; }
+  .sidebar nav button.active { background: #ece8f2; }
   :root[data-theme="dark"] .sidebar nav button.active { background: var(--accent); }
 
   .sidebar-bottom { flex-direction: column; }

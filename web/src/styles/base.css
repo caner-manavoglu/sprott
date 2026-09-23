@@ -2,7 +2,7 @@
 
 * {
   box-sizing: border-box;
-  border-color: #e5e9e6;
+  border-color: #e7e7e7;
 }
 
 body { margin: 0; }
@@ -13,7 +13,7 @@ button:disabled { cursor: default; }
 
 button:focus-visible,
 .board-scroll:focus-visible {
-  outline: 2px solid #308e70;
+  outline: 2px solid #5811d6;
   outline-offset: 3px;
 }
 
@@ -33,13 +33,13 @@ form > .field { margin-bottom: 19px; }
 
 textarea { resize: vertical; }
 
-.muted { color: #7d8781; }
+.muted { color: #828282; }
 
 .eyebrow {
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 1.7px;
-  color: #839187;
+  color: #8a8a8a;
 }
 
 /* Marka kilidi: "Sprott" yazısı, noktası ve eğik çubuklardan oluşan simge. */
@@ -54,7 +54,7 @@ textarea { resize: vertical; }
 
 .brand-dot {
   margin-left: -8px;
-  color: #42a17e;
+  color: #633ba8;
 }
 
 .brand-icon {
@@ -66,7 +66,7 @@ textarea { resize: vertical; }
   height: 30px;
   margin-right: 1px;
   border-radius: 8px;
-  background: #176b52;
+  background: #6a1bf7;
 }
 
 .brand-icon span {
@@ -105,5 +105,5 @@ textarea { resize: vertical; }
   justify-content: center;
   gap: 20px;
   height: 100dvh;
-  color: #82917e;
+  color: #888888;
 }

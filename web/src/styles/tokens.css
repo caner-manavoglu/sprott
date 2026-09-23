@@ -8,20 +8,20 @@
   --color-primary-foreground: #fff;
   --color-accent: var(--accent);
   --color-input: var(--input);
-  --color-ring: #308e70;
+  --color-ring: #6a1bf7;
   --color-destructive: #bd3838;
   --color-muted-foreground: var(--muted-foreground);
 }
 
 :root {
   --background: #fff;
-  --foreground: #26352e;
-  --primary: #176b52;
-  --accent: #eef2ef;
-  --input: #dce2df;
-  --muted-foreground: #76817b;
+  --foreground: #17151c;
+  --primary: #6a1bf7;
+  --accent: #f1ebff;
+  --input: #dfdfdf;
+  --muted-foreground: #7c7c7c;
   /* Zeminden bir ton ayrılan yüzey; açılır paneller bunu kullanır. */
-  --surface: #f7f9f7;
+  --surface: #f8f8f8;
   /* Süresi geçen task işaretlemesi. */
   --late: #c0453c;
   --late-soft: #fff3f1;
@@ -41,16 +41,16 @@
 
 /* Koyu tema; `index.html` içindeki betik data-theme'i ilk boyamadan önce yazar. */
 :root[data-theme="dark"] {
-  --background: #121a17;
-  --foreground: #e4ede7;
-  --primary: #237555;
-  --accent: #263b30;
-  --input: #36483e;
-  --muted-foreground: #a6b4ac;
+  --background: #100e14;
+  --foreground: #e7e3ee;
+  --primary: #7c3aff;
+  --accent: #2a1b4d;
+  --input: #37333f;
+  --muted-foreground: #adadad;
   /* Yalnızca koyu temada gereken yüzeyler. */
-  --surface: #1b2821;
-  --subtle: #202f27;
-  --green: #83d5b0;
+  --surface: #191622;
+  --subtle: #221e2c;
+  --green: #b69cff;
   --late: #ff9d93;
   --late-soft: #3a2320;
   --late-border: #8a4f47;
