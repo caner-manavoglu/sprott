@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, Check, ChevronLeft, ChevronRight, GitPullRequest, MessageSquare, Plus, ScrollText, Trash2, Unlink, UserPlus } from 'lucide-react';
+import { api } from '../api';
 import { Select } from '../components/ui';
+import { useAsync } from '../lib/use-async';
 import type { ActivityLog, LogAction } from '../lib/types';
 
 const stamp = new Intl.DateTimeFormat('tr-TR', {dateStyle: 'medium', timeStyle: 'short'});
@@ -16,23 +19,35 @@ const actions: Record<LogAction, {label: string; icon: React.ReactNode; tone: st
   'pr.merge': {label: 'PR onayladı', icon: <Check size={13}/>, tone: 'create'},
 };
 
-type Props = {
-  log: ActivityLog | null;
-  busy: boolean;
-  taskId: number | null;
-  actorId: number | null;
-  onProject: (projectId: number) => void;
-  onTask: (taskId: number | null) => void;
-  onActor: (actorId: number | null) => void;
-  onPage: (page: number) => void;
-  onPageSize: (pageSize: number) => void;
-};
+type Filters = {projectId: number | null; taskId: number | null; actorId: number | null; page: number; pageSize: number};
+
+const query = ({projectId, taskId, actorId, page, pageSize}: Filters) =>
+  `logs?projectId=${projectId ?? ''}${taskId ? `&taskId=${taskId}` : ''}${actorId ? `&actorId=${actorId}` : ''}`
+  + `${page > 1 ? `&page=${page}` : ''}&pageSize=${pageSize}`;
 
 /**
  * Etkinlik günlüğü. Salt okunur: listeleme dışında bir işlem yoktur.
  * Kayıtlar yeniden eskiye sıralıdır ve sunucudan sayfa sayfa gelir.
  */
-export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor, onPage, onPageSize}: Props) {
+export function LogsPage() {
+  const {busy, error, run} = useAsync();
+  const [log, setLog] = useState<ActivityLog | null>(null);
+  // Sayfa açılışında filtreler boştur; sunucu erişilebilen ilk projeyi seçer.
+  const [filters, setFilters] = useState<Filters>({projectId: null, taskId: null, actorId: null, page: 1, pageSize: 10});
+  const {taskId, actorId} = filters;
+  useEffect(() => {
+    void run(async () => setLog(await api<ActivityLog>(query(filters))));
+  }, [filters]);
+  // Filtre değişince sayfa 1'e döner; proje değişince task ve kişi filtresi de sıfırlanır.
+  // İlk yüklemede proje sunucunun seçtiğidir; sonraki sorgular onu açıkça gönderir.
+  const change = (next: Partial<Filters>) =>
+    setFilters(current => ({...current, projectId: current.projectId ?? log?.projectId ?? null, page: 1, ...next}));
+  const onProject = (projectId: number) => change({projectId, taskId: null, actorId: null});
+  const onTask = (taskId: number | null) => change({taskId});
+  const onActor = (actorId: number | null) => change({actorId});
+  const onPage = (page: number) => change({page});
+  const onPageSize = (pageSize: number) => change({pageSize});
+
   if (log && !log.projects.length) {
     return <div className="empty-panel"><div><ScrollText size={22}/></div><strong>Görüntülenecek proje yok</strong>
       <span>Bir projeye eklendiğinizde o projenin günlüğü burada görünür.</span></div>;
@@ -44,6 +59,7 @@ export function LogsPage({log, busy, taskId, actorId, onProject, onTask, onActor
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return <div className="permissions-panel">
+    {error && <p className="error" role="alert">{error}</p>}
     <div className="permissions-heading">
       <div className="permission-icon"><ScrollText size={21}/></div>
       <div><h2>Etkinlik günlüğü</h2><p>Kayıtlar yalnızca okunur; silinemez ve değiştirilemez.</p></div>

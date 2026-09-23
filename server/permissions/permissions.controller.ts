@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Inject, Param, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type AuthRequest } from '../common/auth.ts';
+import { CurrentUser, ParseId } from '../common/auth.ts';
+import type { User } from '../common/fields.ts';
 import { DtoPipe } from '../common/dto.pipe.ts';
 import { usersSchema } from '../common/schemas.ts';
 import { updatePermissionsSchema, type UpdatePermissionsDto } from './dto/permissions.dto.ts';
@@ -16,14 +17,14 @@ export class PermissionsController {
   constructor(@Inject(PermissionsService) private service: PermissionsService) { }
   @ApiOperation({ summary: 'Kullanıcı yetkilerini listele (yönetici)' })
   @ApiResponse({ status: 200, schema: usersSchema })
-  @Get() async list(@Req() req: AuthRequest) { return this.service.list(req); }
+  @Get() async list(@CurrentUser() user: User) { return this.service.list(user); }
   @ApiOperation({ summary: 'Tanımlı yetki anahtarlarını listele (yönetici)' })
   @ApiResponse({ status: 200, schema: definitionsSchema })
-  @Get('definitions') definitions(@Req() req: AuthRequest) { return this.service.definitions(req); }
+  @Get('definitions') definitions(@CurrentUser() user: User) { return this.service.definitions(user); }
   @ApiOperation({ summary: 'Kişinin modül yetkilerini güncelle (yönetici)' })
   @ApiParam({ name: 'id', type: Number, example: 2 })
   @ApiBody({ schema: permissionSchema })
   @ApiResponse({ status: 400, description: 'Geçersiz istek.' })
   @ApiResponse({ status: 200, schema: usersSchema })
-  @Patch(':id') async update(@Req() req: AuthRequest, @Param('id') id: string, @Body(new DtoPipe(updatePermissionsSchema)) body: UpdatePermissionsDto) { return this.service.update(req, id, body); }
+  @Patch(':id') async update(@CurrentUser() user: User, @Param('id', ParseId) id: number, @Body(new DtoPipe(updatePermissionsSchema)) body: UpdatePermissionsDto) { return this.service.update(user, id, body); }
 }

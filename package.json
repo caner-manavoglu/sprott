@@ -12,7 +12,6 @@
     "test": "tsx --test tests/*.test.ts",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose stop db",
-    "db:migrate:sqlite": "tsx scripts/migrate-sqlite.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",

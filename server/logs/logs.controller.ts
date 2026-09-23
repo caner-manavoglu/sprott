@@ -1,6 +1,7 @@
-import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
+import { Controller, Get, Inject, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type AuthRequest } from '../common/auth.ts';
+import { CurrentUser } from '../common/auth.ts';
+import type { User } from '../common/fields.ts';
 import { logSchema } from './logs.schemas.ts';
 import { LogsService } from './logs.service.ts';
 
@@ -19,11 +20,11 @@ export class LogsController {
   @ApiQuery({ name: 'pageSize', required: false, description: `Sayfa başına kayıt; yalnızca ${LogsService.pageSizes.join(', ')} kabul edilir.`, example: 10 })
   @ApiResponse({ status: 200, schema: logSchema })
   @Get() async index(
-    @Req() req: AuthRequest,
+    @CurrentUser() user: User,
     @Query('projectId') rawProjectId?: string,
     @Query('taskId') rawTaskId?: string,
     @Query('actorId') rawActorId?: string,
     @Query('page') rawPage?: string,
     @Query('pageSize') rawPageSize?: string,
-  ) { return this.service.index(req, rawProjectId, rawTaskId, rawActorId, rawPage, rawPageSize); }
+  ) { return this.service.index(user, rawProjectId, rawTaskId, rawActorId, rawPage, rawPageSize); }
 }

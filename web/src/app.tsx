@@ -1,34 +1,32 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Columns3, GitBranch, Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun } from 'lucide-react';
-import { api, authToken, fileBody, setToken } from './api';
+import { ChevronRight, Columns3, GitBranch, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { api, fileBody } from './api';
 import { Brand } from './components/brand';
 import { Login } from './components/login';
 import { Sidebar } from './components/sidebar';
 import { subscribeLive } from './lib/live';
 import { NotificationBell } from './components/notifications';
 import { TaskSearch } from './components/task-search';
+import { PageActionsSlot } from './components/page-actions';
+import { ThemeToggle } from './components/theme-toggle';
 import { AnnouncementPopup } from './components/announcement';
 import { Button } from './components/ui';
 import { ColumnsDialog } from './components/dialogs/columns-dialog';
-import { GroupDialog, type GroupDraft } from './components/dialogs/group-dialog';
 import { NewTaskDialog, TaskDetailDialog } from './components/dialogs/task-dialog';
 import { PullRequestsPage } from './pages/pull-requests-page';
 import { PullRequestDialog, type PullRequestDraft } from './components/dialogs/pull-request-dialog';
 import { PrWarningDialog } from './components/dialogs/pr-warning-dialog';
-import { PermissionsDialog } from './components/dialogs/permissions-dialog';
 import { WorkflowDialog } from './components/dialogs/workflow-dialog';
-import { ProjectDialog, ProjectMembersDialog, type ProjectDraft } from './components/dialogs/project-dialogs';
 import { ConfirmDialog, type Confirmation } from './components/dialogs/confirm-dialog';
-import { UserDialog, type UserDraft } from './components/dialogs/user-dialog';
 import { BoardPage } from './pages/board-page';
 import { DashboardPage } from './pages/dashboard-page';
 import { MyTasksPage } from './pages/my-tasks-page';
-import { GroupsPage } from './pages/groups-page';
+import { GroupsView } from './pages/groups-page';
 import { PermissionsPage } from './pages/permissions-page';
-import { ProjectsPage } from './pages/projects-page';
+import { ProjectsView } from './pages/projects-page';
 import { LogsPage } from './pages/logs-page';
-import { ReportDetailPage, ReportsPage } from './pages/reports-page';
-import { AddUserButton, UsersPage } from './pages/users-page';
+import { ReportsView } from './pages/reports-page';
+import { UsersView } from './pages/users-page';
 import { NotificationsPage } from './pages/notifications-page';
 import { ProfilePage } from './pages/profile-page';
 import { ForumsPage } from './pages/forums-page';
@@ -37,7 +35,7 @@ import { AnnouncementDialog, type AnnouncementDraft } from './components/dialogs
 import { allowed, roleLabel } from './lib/format';
 import { useAsync } from './lib/use-async';
 import { emptyBoard, emptyPullRequests, emptyFeed } from './lib/types';
-import type { ActivityLog, Announcement, MyTask, AnnouncementDetail, Board, Definition, Group, Member, Notification, NotificationFeed, LinkableTask, OverdueTask, PrState, Project, PullRequest, PullRequestFeed, Report, ReportDetail, Role, SummaryProject, Task, TaskSearchResult, Transition, User, Workflow } from './lib/types';
+import type { Announcement, MyTask, AnnouncementDetail, Board, Notification, NotificationFeed, LinkableTask, OverdueTask, Project, PullRequestFeed, SummaryProject, Task, TaskComment, Transition, User, Workflow } from './lib/types';
 import { headingFor, matchRoute, navigate, pageTitles, paths, usePath } from './routes';
 
 export function App() {
@@ -45,7 +43,6 @@ export function App() {
   const route = matchRoute(path);
   const {busy, error, setError, run} = useAsync();
 
-  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,26 +52,8 @@ export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [summary, setSummary] = useState<SummaryProject[]>([]);
   const [overdue, setOverdue] = useState<OverdueTask[]>([]);
-  // Log sayfası: seçili proje ve task filtresi adresten değil yerel durumdan gelir.
-  const [log, setLog] = useState<ActivityLog | null>(null);
-  const [logProject, setLogProject] = useState<number | null>(null);
-  const [logTask, setLogTask] = useState<number | null>(null);
-  const [logActor, setLogActor] = useState<number | null>(null);
-  const [logSize, setLogSize] = useState(10);
-  const [users, setUsers] = useState<User[]>([]);
-  const [userSearch, setUserSearch] = useState('');
-  const [people, setPeople] = useState<User[]>([]);
-  const [definitions, setDefinitions] = useState<Definition[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [candidates, setCandidates] = useState<Member[]>([]);
-  const [report, setReport] = useState<Report | null>(null);
-  const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
-  const [everyone, setEveryone] = useState<User[]>([]);
   const [feed, setFeed] = useState<NotificationFeed>(emptyFeed);
   const [bellOpen, setBellOpen] = useState(false);
-  const [taskSearch, setTaskSearch] = useState('');
-  const [taskResults, setTaskResults] = useState<TaskSearchResult[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [announcementReport, setAnnouncementReport] = useState<AnnouncementDetail | null>(null);
   // Duyuru yapılabilecek gruplar ve okunmamış zorunlu duyurular oturum boyunca taşınır.
@@ -92,16 +71,15 @@ export function App() {
   const [prWarning, setPrWarning] = useState<{taskId: number; columnId: number} | null>(null);
   const [taskDraft, setTaskDraft] = useState<number | null>(null);
   const [openTask, setOpenTask] = useState<Task | null>(null);
+  /** Açık task'ın yorumları; pano yanıtında taşınmaz, task açılınca ayrıca çekilir. */
+  const [comments, setComments] = useState<TaskComment[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [workflowOpen, setWorkflowOpen] = useState(false);
-  const [userDraft, setUserDraft] = useState<UserDraft | null>(null);
-  const [groupDraft, setGroupDraft] = useState<GroupDraft | null>(null);
-  const [projectDraft, setProjectDraft] = useState<ProjectDraft | null>(null);
-  const [memberProject, setMemberProject] = useState<Project | null>(null);
+  /** Sayfaların kendi "ekle" düğmelerini koyduğu başlık alanı. */
+  const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null);
   // Geri alınması zor her işlem aynı onay modalından geçer.
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const ask = (request: Confirmation) => {setError(''); setConfirmation(request);};
-  const [permissionPerson, setPermissionPerson] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(false);
 
@@ -132,25 +110,13 @@ export function App() {
     updateWorkflow: allowed(user, 'workflow.update'), deleteWorkflow: allowed(user, 'workflow.delete'),
   };
 
-  useEffect(() => {
-    const theme = dark ? 'dark' : 'light';
-    document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#100e14' : '#6a1bf7');
-    try { localStorage.setItem('sprott-theme', theme); } catch { /* Tema, depolama kapalıyken de çalışır. */ }
-  }, [dark]);
-
   // Kök adres ve tanınmayan yollar özete düşer; adres çubuğu da özetin yolunu gösterir.
   useEffect(() => {
     if (route.page === 'dashboard' && path !== paths.dashboard) navigate(paths.dashboard, {replace: true});
   }, [path]);
 
-  const themeToggle = <Button type="button" variant="outline" size="icon" className="theme-toggle"
-    aria-label="Koyu tema" aria-pressed={dark} title={dark ? 'Açık temaya geç' : 'Koyu temaya geç'}
-    onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</Button>;
-
-  /** Oturum verisi: kullanıcı, proje listesi ve özet her tazelemede yenilenir. */
-  async function refresh() {
-    setUser(await api<User>('me'));
+  /** Oturum verisi: proje listesi, özet, bildirimler ve bekleyen zorunlu duyurular. */
+  async function loadSession() {
     const [list, overview, late, notifications, pending] = await Promise.all([
       api<Project[]>('projects').catch(() => [] as Project[]),
       api<SummaryProject[]>('dashboard'),
@@ -164,6 +130,10 @@ export function App() {
     setFeed(notifications);
     setMandatory(pending);
   }
+  async function refresh() {
+    setUser(await api<User>('me'));
+    await loadSession();
+  }
 
   useEffect(() => {
     const expired = () => {
@@ -172,7 +142,8 @@ export function App() {
       navigate(paths.dashboard);
     };
     window.addEventListener('session-expired', expired);
-    (authToken ? refresh() : Promise.resolve())
+    // Oturum çerezi JavaScript'ten okunamaz; geçerli olup olmadığını /me söyler.
+    refresh()
       .catch(err => {if (!String(err).includes('Lütfen giriş')) setError(err.message);})
       .finally(() => setLoading(false));
     return () => window.removeEventListener('session-expired', expired);
@@ -188,7 +159,10 @@ export function App() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false, pending = false, rerun = false;
-    const sync = async () => {
+    // Başka projenin panosu değiştiyse bu pano yeniden çekilmez; bildirimler her olayda tazelenir.
+    let boardChanged = false;
+    const sync = async (projectId: number | null) => {
+      if (route.page === 'board' && (projectId === null || projectId === route.projectId)) boardChanged = true;
       if (pending) {rerun = true; return;}
       pending = true;
       try {
@@ -198,9 +172,14 @@ export function App() {
             const delivered = await api<{id: number}[]>('forums/deliveries');
             if (!cancelled && delivered.length) await api('forums/receipts', 'POST', {ids: delivered.map(message => message.id), kind: 'delivered'});
           }
-          if (route.page === 'board') {
+          if (route.page === 'board' && boardChanged) {
+            boardChanged = false;
             const next = await api<Board>(`projects/${route.projectId}/board`);
             if (!cancelled) setBoard(next);
+            if (route.taskId !== null) {
+              const list = await api<TaskComment[]>(`tasks/${route.taskId}/comments`).catch(() => null);
+              if (!cancelled && list) setComments(list);
+            }
           } else if (route.page === 'dashboard') {
             const [overview, late] = await Promise.all([api<SummaryProject[]>('dashboard'), api<OverdueTask[]>('dashboard/overdue')]);
             if (!cancelled) {setSummary(overview); setOverdue(late);}
@@ -212,7 +191,7 @@ export function App() {
         if (!cancelled) {if (route.page === 'board') setBoard(emptyBoard); setError((err as Error).message);}
       } finally {pending = false;}
     };
-    const unsubscribe = subscribeLive(() => {void sync();});
+    const unsubscribe = subscribeLive(projectId => {void sync(projectId);});
     return () => {cancelled = true; unsubscribe();};
   }, [user?.id, path, allowed(user, 'forum.view')]);
 
@@ -256,32 +235,6 @@ export function App() {
           if (route.taskId !== null) setOpenTask(data.tasks.find(task => task.id === route.taskId) ?? null);
           break;
         }
-        case 'permissions': {
-          const [list, keys] = await Promise.all([api<User[]>('permissions'), api<Definition[]>('permissions/definitions')]);
-          setPeople(list);
-          setDefinitions(keys);
-          break;
-        }
-        case 'users':
-          setUsers(await api<User[]>('users'));
-          setUserSearch('');
-          break;
-        case 'groups': {
-          const [list, pool] = await Promise.all([api<Group[]>('groups'), api<Member[]>('groups/members')]);
-          setGroups(list);
-          setCandidates(pool);
-          break;
-        }
-        case 'logs': {
-          // Sayfa açılışında filtreler sıfırlanır; sunucu erişilebilen ilk projeyi döndürür.
-          const feedLog = await api<ActivityLog>('logs');
-          setLog(feedLog);
-          setLogProject(feedLog.projectId);
-          setLogTask(null);
-          setLogActor(null);
-          setLogSize(feedLog.pageSize);
-          break;
-        }
         case 'notifications':
           setFeed(await api<NotificationFeed>('notifications'));
           break;
@@ -294,10 +247,6 @@ export function App() {
           if (route.announcementId === null) setAnnouncements(await api<Announcement[]>('announcements'));
           else setAnnouncementReport(await api<AnnouncementDetail>(`announcements/${route.announcementId}`));
           break;
-        case 'reports':
-          if (route.personId === null) setReport(await api<Report>('reports'));
-          else setReportDetail(await api<ReportDetail>(`reports/${route.personId}`));
-          break;
       }
     });
   }, [user?.id, dataKey]);
@@ -307,58 +256,28 @@ export function App() {
     if (route.page === 'board' && route.taskId === null) setOpenTask(null);
   }, [path]);
 
-  // Kullanıcı listesindeki arama sunucuya bırakılır; uç ILIKE ile ad, soyad ve e-postada arar.
+  // Task açılınca yorumları yüklenir; kapanınca eski task'ın yorumları görünmesin diye boşaltılır.
   useEffect(() => {
-    if (route.page !== 'users') return;
-    const timer = setTimeout(() => {
-      api<User[]>(`users?search=${encodeURIComponent(userSearch.trim())}`)
-        .then(setUsers)
-        .catch(err => setError((err as Error).message));
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [route.page, userSearch]);
-
-  // Üst çubuktaki task araması da kullanıcı aramasıyla aynı yolu izler: gecikmeli istek, sunucuda ILIKE.
-  useEffect(() => {
-    const term = taskSearch.trim();
-    if (term.length < 2) { setTaskResults([]); return; }
-    const timer = setTimeout(() => {
-      api<TaskSearchResult[]>(`tasks?q=${encodeURIComponent(term)}`)
-        .then(results => { setTaskResults(results); setSearchOpen(true); })
-        .catch(() => setTaskResults([]));
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [taskSearch]);
+    setComments([]);
+    if (!openTask) return;
+    api<TaskComment[]>(`tasks/${openTask.id}/comments`).then(setComments).catch(err => setError((err as Error).message));
+  }, [openTask?.id]);
 
   if (loading) return <div className="loading"><Brand/><p>Çalışma alanı yükleniyor…</p></div>;
 
-  if (!user) return <Login busy={busy} error={error} themeToggle={themeToggle} onRoleChange={() => setError('')}
+  if (!user) return <Login busy={busy} error={error} themeToggle={<ThemeToggle/>}
     onSubmit={credentials => void run(async () => {
-      const me = await api<User & {token: string}>('login', 'POST', credentials as {email: string; password: string; role: Role});
-      setToken(me.token);
+      // Sunucu oturum çerezini yazar; yanıttaki token tarayıcıda saklanmaz.
+      const {token: _token, ...me} = await api<User & {token: string}>('login', 'POST', credentials);
       setUser(me);
       navigate(paths.dashboard);
-      const [list, overview, late, notifications, pending] = await Promise.all([
-        api<Project[]>('projects').catch(() => [] as Project[]),
-        api<SummaryProject[]>('dashboard'),
-        api<OverdueTask[]>('dashboard/overdue'),
-        api<NotificationFeed>('notifications'),
-        api<Announcement[]>('announcements/pending'),
-      ]);
-      setProjects(list);
-      setSummary(overview);
-      setOverdue(late);
-      setFeed(notifications);
-      setMandatory(pending);
+      await loadSession();
     })}/>;
 
   const heading = headingFor(route, board);
 
   /** Sayfa başlığındaki sağ taraftaki eylemler sayfaya göre değişir. */
   const headerActions = <>
-    {route.page === 'projects' && can.createProject && <Button onClick={() => {setError(''); setProjectDraft('new');}}>
-      <Plus size={17}/> Proje oluştur
-    </Button>}
     {route.page === 'board' && <>
       {can.editColumns && <Button variant="outline" onClick={() => {setError(''); setColumnsOpen(true);}}>
         <Columns3 size={16}/> Sütunları düzenle
@@ -376,10 +295,6 @@ export function App() {
       setAnnouncementDraft('new');
     })}>
       <Plus size={17}/> Duyuru oluştur
-    </Button>}
-    {route.page === 'users' && can.createUser && <AddUserButton onClick={() => {setError(''); setUserDraft('new');}}/>}
-    {route.page === 'groups' && can.createGroup && <Button onClick={() => {setError(''); setGroupDraft('new');}}>
-      <Plus size={17}/> Grup ekle
     </Button>}
   </>;
 
@@ -426,17 +341,6 @@ export function App() {
     moveTask(taskId, columnId);
   };
 
-  /** Günlük sorgusu; verilmeyen filtreler mevcut seçimden okunur, filtre değişince sayfa 1'e döner. */
-  const loadLogs = (change: {projectId?: number; taskId?: number | null; actorId?: number | null; page?: number; pageSize?: number}) => {
-    const projectId = change.projectId ?? logProject;
-    const taskId = 'projectId' in change ? null : change.taskId !== undefined ? change.taskId : logTask;
-    const actorId = 'projectId' in change ? null : change.actorId !== undefined ? change.actorId : logActor;
-    const page = change.page ?? 1;
-    return `logs?projectId=${projectId ?? ''}${taskId ? `&taskId=${taskId}` : ''}`
-      + `${actorId ? `&actorId=${actorId}` : ''}${page > 1 ? `&page=${page}` : ''}`
-      + `&pageSize=${change.pageSize ?? logSize}`;
-  };
-
   /** PR ekranının verisini tazeler; pano açıksa kartlardaki rozet de güncellenir. */
   /** Yazma uçlarına eklenen süzgeç; yanıt ekrandaki görünümle aynı kapsamda döner. */
   const prView = () => (prProject === null ? '' : `?view=${prProject}`);
@@ -446,27 +350,31 @@ export function App() {
     if (route.page === 'board') setBoard(await api<Board>(`projects/${route.projectId}/board`));
   };
 
-  const reloadBoard = async () => {
-    if (route.page === 'board') setBoard(await api<Board>(`projects/${route.projectId}/board`));
-  };
-
-  /** Task detayındaki silmeler panoyu ve açık task'ı aynı yanıttan tazeler. */
+  /** Dosya silme panoyu ve açık task'ı aynı yanıttan tazeler. */
   const reloadTask = (path: string, method = 'DELETE') => run(async () => {
     const next = await api<Board>(path, method);
     setBoard(next);
     setOpenTask(next.tasks.find(item => item.id === openTask!.id) ?? null);
   });
+  /** Yorum işlemleri yalnızca açık task'ın yorum listesini döndürür. */
+  const reloadComments = (path: string, method = 'DELETE', body?: unknown) =>
+    run(async () => setComments(await api<TaskComment[]>(path, method, body)));
 
-  const toggleCompletion = (project: Project) => run(async () => {
-    setProjects(await api<Project[]>(`projects/${project.id}/completion`, 'PATCH', {completed: !project.completedAt}));
-    if (board.project?.id === project.id) setBoard(await api<Board>(`projects/${project.id}/board`));
-  });
+  /** Proje listesi değişince kenar çubuğu, özet ve açık kalmış pano verisi tazelenir. */
+  const projectsChanged = async (list: Project[]) => {
+    setProjects(list);
+    setSummary(await api<SummaryProject[]>('dashboard'));
+    const current = board.project?.id;
+    if (current === undefined) return;
+    // Silinen projenin panosu bırakılır; tamamlanan/yeniden açılan projenin kilidi güncellenir.
+    setBoard(list.some(project => project.id === current) ? await api<Board>(`projects/${current}/board`) : emptyBoard);
+  };
 
   // Onay metninde dosya adı geçsin diye açık task üzerinden aranır.
   const attachmentName = (attachmentId: number) =>
     openTask?.attachments?.find(item => item.id === attachmentId)?.name ?? 'Dosya';
   const commentAttachmentName = (commentId: number, attachmentId: number) =>
-    openTask?.comments?.find(item => item.id === commentId)?.attachments
+    comments.find(item => item.id === commentId)?.attachments
       .find(item => item.id === attachmentId)?.name ?? 'Dosya';
 
   return <div className={`app-shell${sidebarOpen ? '' : ' sidebar-closed'}`}>
@@ -475,7 +383,6 @@ export function App() {
       onToggleProjects={() => setProjectsOpen(open => !open)}
       onLogout={() => void run(async () => {
         await api('logout', 'POST');
-        setToken('');
         setUser(null);
         setBoard(emptyBoard);
         setFeed(emptyFeed);
@@ -483,6 +390,7 @@ export function App() {
       })}/>
 
     {/* `key` sayfa değişince içeriği yeniden bağlar; böylece giriş animasyonu her geçişte çalışır. */}
+    <PageActionsSlot.Provider value={actionsSlot}>
     <main className="main-content" key={route.page}>
       <header className="topbar">
         <div>
@@ -492,10 +400,7 @@ export function App() {
           Çalışma alanı <ChevronRight size={14}/><span>{pageTitles[route.page].crumb}</span>
         </div>
         <div className="topbar-actions">
-          {can.viewTasks && <TaskSearch value={taskSearch} results={taskResults} open={searchOpen}
-            onChange={value => {setTaskSearch(value); setSearchOpen(true);}}
-            onClose={() => setSearchOpen(false)}
-            onOpenTask={item => {setSearchOpen(false); setTaskSearch(''); navigate(paths.boardTask(item.projectId, item.id));}}/>}
+          {can.viewTasks && <TaskSearch onOpenTask={item => navigate(paths.boardTask(item.projectId, item.id))}/>}
           <NotificationBell feed={feed} open={bellOpen}
             onToggle={() => setBellOpen(open => !open)}
             onClose={() => setBellOpen(false)}
@@ -503,7 +408,7 @@ export function App() {
             onReadAll={() => void run(async () => setFeed(await api<NotificationFeed>('notifications/read', 'PATCH')))}
             onSeeAll={() => {setBellOpen(false); navigate(paths.notifications);}}/>
           <span className="role-pill"><span/>{roleLabel(user.role)} hesabı</span>
-          {themeToggle}
+          <ThemeToggle/>
         </div>
       </header>
 
@@ -513,7 +418,7 @@ export function App() {
           <h1>{heading.heading}</h1>
           <p className="muted">{heading.description}</p>
         </div>
-        <div className="header-actions">{headerActions}</div>
+        <div className="header-actions" ref={setActionsSlot}>{headerActions}</div>
       </section>
 
       {error && <div className="page-error error" role="alert">{error}</div>}
@@ -531,46 +436,8 @@ export function App() {
         setUser({...await api<User>('users/me', 'PATCH', body), avatarVersion: Date.now()});
       })}/></div>}
 
-      {route.page === 'projects' && <div className="page-body">
-        <ProjectsPage projects={projects} busy={busy} canUpdate={can.updateProject} canDelete={can.deleteProject}
-          onToggleComplete={project => ask(project.completedAt
-            ? {
-                title: 'Projeyi yeniden aç',
-                description: `${project.name} yeniden düzenlenebilir olacak; panodaki task'lar ve sütunlar tekrar değiştirilebilir.`,
-                confirmLabel: 'yeniden aç',
-                action: () => toggleCompletion(project),
-              }
-            : {
-                title: 'Projeyi tamamla',
-                description: `${project.name} tamamlanacak ve panosunda değişiklik yapılamayacak. Mevcut task'lar, ekler ve yorumlar olduğu gibi korunur.`,
-                confirmLabel: 'tamamla',
-                action: () => toggleCompletion(project),
-              })}
-          onOpen={id => navigate(paths.board(id))}
-          onEdit={project => {setError(''); setProjectDraft(project);}}
-          onDelete={project => ask({
-            title: 'Projeyi sil',
-            description: `${project.name} projesi ve sütunları silinecek.`,
-            confirmLabel: 'sil', destructive: true,
-            action: () => run(async () => {
-              setProjects(await api<Project[]>(`projects/${project.id}`, 'DELETE'));
-              setSummary(await api<SummaryProject[]>('dashboard'));
-              if (board.project?.id === project.id) {
-                setBoard(emptyBoard);
-                navigate(paths.projects);
-              }
-            }),
-          })}
-          onMembers={project => void run(async () => {
-            const [list, all] = await Promise.all([
-              api<User[]>(`projects/${project.id}/members`),
-              api<User[]>('users').catch(() => [] as User[]),
-            ]);
-            setMembers(list);
-            setEveryone(all);
-            setMemberProject(project);
-          })}/>
-      </div>}
+      {route.page === 'projects' && <ProjectsView projects={projects} onChange={projectsChanged}
+        can={{create: can.createProject, update: can.updateProject, delete: can.deleteProject}}/>}
 
       {route.page === 'board' && <BoardPage board={board} members={members} busy={busy} locked={boardLocked}
         canCreate={can.createTask} canUpdate={can.updateTask} isAdmin={!!isAdmin}
@@ -578,29 +445,12 @@ export function App() {
         onOpenTask={task => {setError(''); setOpenTask(task); navigate(paths.boardTask(route.projectId, task.id) + location.search);}}
         onMove={requestMove}/>}
 
-      {route.page === 'permissions' && <PermissionsPage people={people} definitions={definitions} busy={busy}
-        onEdit={person => {setError(''); setPermissionPerson(person);}}/>}
+      {route.page === 'permissions' && <PermissionsPage/>}
 
-      {route.page === 'users' && <UsersPage users={users} currentUser={user} search={userSearch} busy={busy}
-        canUpdate={can.updateUser} canDelete={can.deleteUser}
-        onSearch={setUserSearch}
-        onEdit={person => {setError(''); setUserDraft(person);}}
-        onDelete={person => ask({
-          title: 'Kullanıcıyı sil',
-          description: `${person.name} ${person.surname} hesabı silinecek.`,
-          confirmLabel: 'sil', destructive: true,
-          action: () => run(async () => setUsers(await api<User[]>(`users/${person.id}`, 'DELETE'))),
-        })}/>}
+      {route.page === 'users' && <UsersView currentUser={user}
+        canCreate={can.createUser} canUpdate={can.updateUser} canDelete={can.deleteUser}/>}
 
-      {route.page === 'groups' && <GroupsPage groups={groups} busy={busy}
-        canUpdate={can.updateGroup} canDelete={can.deleteGroup}
-        onEdit={group => {setError(''); setGroupDraft(group);}}
-        onDelete={group => ask({
-          title: 'Grubu sil',
-          description: `${group.name} grubu silinecek; üyelikler ve yöneticilikler kaldırılacak.`,
-          confirmLabel: 'sil', destructive: true,
-          action: () => run(async () => setGroups(await api<Group[]>(`groups/${group.id}`, 'DELETE'))),
-        })}/>}
+      {route.page === 'groups' && <GroupsView canCreate={can.createGroup} canUpdate={can.updateGroup} canDelete={can.deleteGroup}/>}
 
       {route.page === 'pullRequests' && <div className="page-body">
         <PullRequestsPage feed={pullRequests} busy={busy}
@@ -623,30 +473,7 @@ export function App() {
           })}/>
       </div>}
 
-      {route.page === 'logs' && <div className="page-body">
-        <LogsPage log={log} busy={busy} taskId={logTask} actorId={logActor}
-          onProject={projectId => {
-            // Proje değişince task ve personel listeleri de değişir; filtreler sıfırlanır.
-            setLogProject(projectId);
-            setLogTask(null);
-            setLogActor(null);
-            void run(async () => setLog(await api<ActivityLog>(loadLogs({projectId}))));
-          }}
-          onTask={taskId => {
-            setLogTask(taskId);
-            void run(async () => setLog(await api<ActivityLog>(loadLogs({taskId}))));
-          }}
-          onActor={actorId => {
-            setLogActor(actorId);
-            void run(async () => setLog(await api<ActivityLog>(loadLogs({actorId}))));
-          }}
-          onPage={page => void run(async () => setLog(await api<ActivityLog>(loadLogs({page}))))}
-          onPageSize={pageSize => {
-            // Boyut değişince sayfa 1'e döner; aksi halde son sayfanın ötesine düşülebilir.
-            setLogSize(pageSize);
-            void run(async () => setLog(await api<ActivityLog>(loadLogs({pageSize}))));
-          }}/>
-      </div>}
+      {route.page === 'logs' && <div className="page-body"><LogsPage/></div>}
 
       {route.page === 'notifications' && <div className="page-body">
         <NotificationsPage feed={feed} busy={busy}
@@ -682,10 +509,9 @@ export function App() {
               })}/>}
       </div>}
 
-      {route.page === 'reports' && (route.personId !== null && reportDetail
-        ? <ReportDetailPage detail={reportDetail} onBack={() => navigate(paths.reports)}/>
-        : <ReportsPage report={report} busy={busy} onOpenPerson={id => navigate(paths.reportDetail(id))}/>)}
+      {route.page === 'reports' && <ReportsView personId={route.personId}/>}
     </main>
+    </PageActionsSlot.Provider>
 
     <PullRequestDialog draft={pullRequestDraft} projects={pullRequests.projects} defaultProjectId={prProject}
       busy={busy} error={error}
@@ -718,7 +544,7 @@ export function App() {
         if (files.length) setBoard(await api<Board>(`tasks/${created.createdTaskId}/attachments`, 'POST', fileBody(files)));
       })}/>
 
-    <TaskDetailDialog task={openTask} board={board} members={members} currentUser={user} busy={busy} error={error}
+    <TaskDetailDialog task={openTask} comments={comments} board={board} members={members} currentUser={user} busy={busy} error={error}
       canUpdate={can.updateTask} canDelete={can.deleteTask}
       onClose={closeTask}
       onSave={values => void run(async () => {
@@ -747,34 +573,30 @@ export function App() {
         confirmLabel: 'sil', destructive: true,
         action: () => reloadTask(`tasks/${openTask!.id}/attachments/${attachmentId}`),
       })}
-      onAddComment={(body, mentions, files) => run(async () => {
+      onAddComment={(body, mentions, files) => {
         const form = fileBody(files);
         form.append('body', body);
         form.append('mentions', JSON.stringify(mentions));
-        const next = await api<Board>(`tasks/${openTask!.id}/comments`, 'POST', form);
-        setBoard(next);
-        setOpenTask(next.tasks.find(item => item.id === openTask!.id) ?? null);
-      })}
-      onUpdateComment={(commentId, body, mentions, files) => run(async () => {
+        return reloadComments(`tasks/${openTask!.id}/comments`, 'POST', form);
+      }}
+      onUpdateComment={(commentId, body, mentions, files) => {
         // Metin, etiketler ve yeni dosyalar tek istekte gider; dosya yoksa gövde boş FormData kalır.
         const form = fileBody(files);
         form.append('body', body);
         form.append('mentions', JSON.stringify(mentions));
-        const next = await api<Board>(`tasks/${openTask!.id}/comments/${commentId}`, 'PATCH', form);
-        setBoard(next);
-        setOpenTask(next.tasks.find(item => item.id === openTask!.id) ?? null);
-      })}
+        return reloadComments(`tasks/${openTask!.id}/comments/${commentId}`, 'PATCH', form);
+      }}
       onRemoveCommentAttachment={(commentId, attachmentId) => ask({
         title: 'Dosyayı kaldır',
         description: `${commentAttachmentName(commentId, attachmentId)} yorumdan kaldırılacak.`,
         confirmLabel: 'kaldır', destructive: true,
-        action: () => reloadTask(`tasks/${openTask!.id}/comments/${commentId}/attachments/${attachmentId}`),
+        action: () => reloadComments(`tasks/${openTask!.id}/comments/${commentId}/attachments/${attachmentId}`),
       })}
       onDeleteComment={commentId => ask({
         title: 'Yorumu sil',
         description: 'Yorum ve ekleri silinecek.',
         confirmLabel: 'sil', destructive: true,
-        action: () => reloadTask(`tasks/${openTask!.id}/comments/${commentId}`),
+        action: () => reloadComments(`tasks/${openTask!.id}/comments/${commentId}`),
       })}/>
 
     <WorkflowDialog open={workflowOpen} board={board} busy={busy} error={error}
@@ -813,40 +635,7 @@ export function App() {
         done();
       })}/>
 
-    <UserDialog draft={userDraft} busy={busy} error={error}
-      onClose={() => setUserDraft(null)}
-      onSubmit={(values, editing) => void run(async () => {
-        setUsers(await api<User[]>(editing ? `users/${editing.id}` : 'users', editing ? 'PATCH' : 'POST', values));
-        setUserDraft(null);
-      })}/>
-
-    <GroupDialog draft={groupDraft} candidates={candidates} busy={busy} error={error}
-      onClose={() => setGroupDraft(null)}
-      onSubmit={(values, editing) => void run(async () => {
-        setGroups(await api<Group[]>(editing ? `groups/${editing.id}` : 'groups', editing ? 'PATCH' : 'POST', values));
-        setGroupDraft(null);
-      })}/>
-
-    <ProjectDialog draft={projectDraft} busy={busy} error={error}
-      onClose={() => setProjectDraft(null)}
-      onSubmit={(values, editing) => void run(async () => {
-        setProjects(await api<Project[]>(editing ? `projects/${editing.id}` : 'projects', editing ? 'PATCH' : 'POST', values));
-        setSummary(await api<SummaryProject[]>('dashboard'));
-        setProjectDraft(null);
-      })}/>
-
-    <ProjectMembersDialog project={memberProject} members={members} everyone={everyone} busy={busy} error={error}
-      onClose={() => setMemberProject(null)}
-      onAdd={person => void run(async () => {
-        setMembers(await api<User[]>(`projects/${memberProject!.id}/members`, 'POST', {userId: person.id}));
-        setProjects(await api<Project[]>('projects'));
-      })}
-      onRemove={person => void run(async () => {
-        setMembers(await api<User[]>(`projects/${memberProject!.id}/members/${person.id}`, 'DELETE'));
-        setProjects(await api<Project[]>('projects'));
-      })}/>
-
-<ConfirmDialog request={confirmation} busy={busy} error={error}
+    <ConfirmDialog request={confirmation} busy={busy} error={error}
       onClose={() => setConfirmation(null)}
       onDone={() => setConfirmation(null)}/>
 
@@ -874,11 +663,5 @@ export function App() {
         if (route.page === 'announcements') setAnnouncements(await api<Announcement[]>('announcements'));
       })}/>
 
-    <PermissionsDialog person={permissionPerson} definitions={definitions} busy={busy} error={error}
-      onClose={() => setPermissionPerson(null)}
-      onSubmit={(permissions, person) => void run(async () => {
-        setPeople(await api<User[]>(`permissions/${person.id}`, 'PATCH', {permissions}));
-        setPermissionPerson(null);
-      })}/>
   </div>;
 }

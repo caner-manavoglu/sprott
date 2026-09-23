@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react';
 import { AlertTriangle, BarChart3, CheckCircle2, LockKeyhole } from 'lucide-react';
+import { api } from '../api';
+import { useAsync } from '../lib/use-async';
+import { navigate, paths } from '../routes';
 import { Button } from '../components/ui';
 import { dateLabel, fullName } from '../lib/format';
 import type { Report, ReportDetail } from '../lib/types';
@@ -16,7 +20,7 @@ const scopeText = (report: Report | null) => {
 };
 
 /** Kişi bazlı kırılım: seçilen personelin proje proje tamamladığı task’lar. */
-export function ReportDetailPage({detail, onBack}: {detail: ReportDetail; onBack: () => void}) {
+function ReportDetailPage({detail, onBack}: {detail: ReportDetail; onBack: () => void}) {
   return <div className="permissions-panel">
     <div className="permissions-heading">
       <div className="permission-icon"><BarChart3 size={21}/></div>
@@ -75,7 +79,7 @@ function OverdueList({tasks}: {tasks: ReportDetail['overdue']}) {
   </>;
 }
 
-export function ReportsPage({report, busy, onOpenPerson}: {report: Report | null; busy: boolean; onOpenPerson: (id: number) => void}) {
+function ReportsPage({report, busy, onOpenPerson}: {report: Report | null; busy: boolean; onOpenPerson: (id: number) => void}) {
   return <div className="permissions-panel">
     <div className="permissions-heading">
       <div className="permission-icon"><BarChart3 size={21}/></div>
@@ -106,4 +110,23 @@ export function ReportsPage({report, busy, onOpenPerson}: {report: Report | null
 
     {footnote}
   </div>;
+}
+
+/** Rapor ekranı: `personId` yoksa kişi listesi, varsa o kişinin proje kırılımı. */
+export function ReportsView({personId}: {personId: number | null}) {
+  const {busy, error, run} = useAsync();
+  const [report, setReport] = useState<Report | null>(null);
+  const [detail, setDetail] = useState<ReportDetail | null>(null);
+  useEffect(() => {
+    void run(async () => {
+      if (personId === null) setReport(await api<Report>('reports'));
+      else setDetail(await api<ReportDetail>(`reports/${personId}`));
+    });
+  }, [personId]);
+  return <>
+    {error && <div className="page-error error" role="alert">{error}</div>}
+    {personId !== null && detail?.person.id === personId
+      ? <ReportDetailPage detail={detail} onBack={() => navigate(paths.reports)}/>
+      : <ReportsPage report={report} busy={busy} onOpenPerson={id => navigate(paths.reportDetail(id))}/>}
+  </>;
 }

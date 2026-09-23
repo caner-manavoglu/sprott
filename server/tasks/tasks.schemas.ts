@@ -44,3 +44,31 @@ export const myTasksSchema: SchemaObject = {
     projectId: id, projectName: {type: 'string', example: 'Mobil uygulama'},
   }},
 };
+
+const fileSchema: SchemaObject = {type: 'object', properties: {
+  id, name: {type: 'string', example: 'ekran.png'}, mimeType: {type: 'string', example: 'image/png'}, size: {type: 'integer', example: 20480},
+}};
+/** Yorum işlemlerinin yanıtı: task'ın güncel yorum listesi, eskiden yeniye. */
+export const commentsSchema: SchemaObject = {
+  type: 'array', description: 'Task yorumları; pano yanıtında yer almaz.',
+  items: {type: 'object', required: ['id', 'body', 'authorId', 'createdAt'], properties: {
+    id, body: {type: 'string', example: '@Ayşe Yılmaz kontrol eder misin?'}, authorId: id,
+    authorName: {type: 'string', nullable: true, example: 'Caner Manavoğlu'},
+    authorHasAvatar: {type: 'boolean', example: false},
+    createdAt: {type: 'string', format: 'date-time'}, updatedAt: {type: 'string', format: 'date-time'},
+    mentions: {type: 'array', items: {type: 'object', properties: {id, name: {type: 'string', example: 'Ayşe Yılmaz'}}}},
+    attachments: {type: 'array', items: fileSchema},
+  }},
+};
+/** Yorum gövdesi multipart gelir: metin, etiketlenen kişiler (JSON dizi metni) ve dosyalar. */
+export const commentBodySchema: SchemaObject = {type: 'object', required: ['body'], properties: {
+  body: {type: 'string', minLength: 1, maxLength: 5000},
+  mentions: {type: 'string', example: '[2,3]', description: 'Etiketlenen proje üyelerinin kimlikleri, JSON dizi olarak.'},
+  files: {type: 'array', items: {type: 'string', format: 'binary'}},
+}};
+export const filesBodySchema: SchemaObject = {type: 'object', required: ['files'], properties: {
+  files: {type: 'array', items: {type: 'string', format: 'binary'}},
+}};
+export const fileBodySchema: SchemaObject = {type: 'object', required: ['file'], properties: {
+  file: {type: 'string', format: 'binary'},
+}};

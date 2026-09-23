@@ -1,19 +1,30 @@
+import { useEffect, useState } from 'react';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
+import { api } from '../api';
 import { Button } from '../components/ui';
+import { PermissionsDialog } from '../components/dialogs/permissions-dialog';
+import { useAsync } from '../lib/use-async';
 import { fullName, roleLabel } from '../lib/format';
 import { moduleName, moduleSummary } from '../lib/permissions';
 import type { Definition, User } from '../lib/types';
 import { Avatar } from '../components/avatar';
 
-type Props = {
-  people: User[];
-  definitions: Definition[];
-  busy: boolean;
-  onEdit: (person: User) => void;
-};
+export function PermissionsPage() {
+  const {busy, error, setError, run} = useAsync();
+  const [people, setPeople] = useState<User[]>([]);
+  const [definitions, setDefinitions] = useState<Definition[]>([]);
+  const [editing, setEditing] = useState<User | null>(null);
+  useEffect(() => {
+    void run(async () => {
+      const [list, keys] = await Promise.all([api<User[]>('permissions'), api<Definition[]>('permissions/definitions')]);
+      setPeople(list);
+      setDefinitions(keys);
+    });
+  }, []);
+  const onEdit = (person: User) => {setError(''); setEditing(person);};
 
-export function PermissionsPage({people, definitions, busy, onEdit}: Props) {
   return <div className="permissions-panel">
+    {!editing && error && <p className="error" role="alert">{error}</p>}
     <div className="permissions-heading">
       <div className="permission-icon"><ShieldCheck size={21}/></div>
       <div><h2>Modül yetkileri</h2><p>Yöneticiler tüm yetkilere sahiptir; personel yetkilerini buradan düzenleyin.</p></div>
@@ -52,5 +63,12 @@ ${entry.labels.join('\n')}`}>
     </table></div>
 
     <div className="permissions-foot"><LockKeyhole size={14}/> Değişiklikler hemen geçerli olur.</div>
+
+    <PermissionsDialog person={editing} definitions={definitions} busy={busy} error={error}
+      onClose={() => setEditing(null)}
+      onSubmit={(permissions, person) => void run(async () => {
+        setPeople(await api<User[]>(`permissions/${person.id}`, 'PATCH', {permissions}));
+        setEditing(null);
+      })}/>
   </div>;
 }

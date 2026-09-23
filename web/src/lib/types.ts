@@ -104,7 +104,6 @@ export type Task = {
   startDate: string | null;
   dueDate: string | null;
   attachments: Attachment[];
-  comments: TaskComment[];
   /** Task'a bağlı PR'lar; `open` olanlar kartta rozetle çıkar ve taşımada uyarı verir. */
   pullRequests: TaskPullRequest[];
 };

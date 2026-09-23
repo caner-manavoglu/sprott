@@ -1,17 +1,15 @@
 import axios from 'axios';
 import { actionMessage, toast } from './lib/toast';
 
-export let authToken = '';
-try { authToken = localStorage.getItem('sprott-token') || ''; } catch { /* Storage may be unavailable. */ }
-export function setToken(value: string) {
-  authToken = value;
-  try { value ? localStorage.setItem('sprott-token', value) : localStorage.removeItem('sprott-token'); } catch { /* Token still works for this tab. */ }
-}
+// Oturum httpOnly çerezde taşınır; JavaScript token'ı görmez. Eski sürümün sakladığı token silinir.
+try { localStorage.removeItem('sprott-token'); } catch { /* Storage may be unavailable. */ }
+
+/** Oturum süresi dolduğunda arayüz giriş ekranına döner. */
+export const sessionExpired = () => window.dispatchEvent(new Event('session-expired'));
 export async function api<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   try {
     const { data } = await axios.request<T>({
       baseURL: '/api/', url: path, method, data: body,
-      headers: authToken ? {Authorization: `Bearer ${authToken}`} : {},
       responseType: 'json', transitional: {silentJSONParsing: false},
     });
     const message = actionMessage(path, method.toUpperCase(), body);
@@ -19,10 +17,7 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
     return data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      if (error.response.status === 401 && path !== 'login') {
-        setToken('');
-        window.dispatchEvent(new Event('session-expired'));
-      }
+      if (error.response.status === 401 && path !== 'login') sessionExpired();
       throw new Error(error.response.data?.message || 'İşlem tamamlanamadı.');
     }
     throw new Error('Sunucuya ulaşılamıyor. Lütfen tekrar deneyin.');
@@ -31,9 +26,7 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
 
 export async function apiBlob(path: string): Promise<Blob> {
   try {
-    const {data} = await axios.get<Blob>(`/api/${path}`, {
-      headers: authToken ? {Authorization: `Bearer ${authToken}`} : {}, responseType: 'blob',
-    });
+    const {data} = await axios.get<Blob>(`/api/${path}`, {responseType: 'blob'});
     return data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) throw new Error('Dosya alınamadı.');

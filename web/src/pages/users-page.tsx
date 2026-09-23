@@ -1,5 +1,11 @@
+import { useEffect, useState } from 'react';
 import { LockKeyhole, Pencil, Trash2, UserCog, UserPlus, Users } from 'lucide-react';
+import { api } from '../api';
 import { Button, Input } from '../components/ui';
+import { PageActions } from '../components/page-actions';
+import { ConfirmDialog, type Confirmation } from '../components/dialogs/confirm-dialog';
+import { UserDialog, type UserDraft } from '../components/dialogs/user-dialog';
+import { useAsync } from '../lib/use-async';
 import { fullName, roleLabel } from '../lib/format';
 import type { User } from '../lib/types';
 import { Avatar } from '../components/avatar';
@@ -16,7 +22,7 @@ type Props = {
   onDelete: (person: User) => void;
 };
 
-export function UsersPage({users, currentUser, search, busy, canUpdate, canDelete, onSearch, onEdit, onDelete}: Props) {
+function UsersPage({users, currentUser, search, busy, canUpdate, canDelete, onSearch, onEdit, onDelete}: Props) {
   return <div className="permissions-panel">
     <div className="permissions-heading">
       <div className="permission-icon"><Users size={21}/></div>
@@ -69,7 +75,43 @@ export function UsersPage({users, currentUser, search, busy, canUpdate, canDelet
   </div>;
 }
 
-/** Sayfa başlığındaki "Kullanıcı ekle" düğmesi. */
-export function AddUserButton({onClick}: {onClick: () => void}) {
-  return <Button onClick={onClick}><UserPlus size={17}/> Kullanıcı ekle</Button>;
+/** Kullanıcılar ekranı: liste, sunucu taraflı arama, ekleme/düzenleme ve silme onayı. */
+export function UsersView({currentUser, canCreate, canUpdate, canDelete}: {currentUser: User; canCreate: boolean; canUpdate: boolean; canDelete: boolean}) {
+  const {busy, error, setError, run} = useAsync();
+  const [users, setUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState('');
+  const [draft, setDraft] = useState<UserDraft | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  // Arama sunucuya bırakılır; uç ILIKE ile ad, soyad ve e-postada arar. İlk yükleme de bu yoldan geçer.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      api<User[]>(`users?search=${encodeURIComponent(search.trim())}`).then(setUsers).catch(err => setError((err as Error).message));
+    }, search ? 200 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  return <>
+    {canCreate && <PageActions>
+      <Button onClick={() => {setError(''); setDraft('new');}}><UserPlus size={17}/> Kullanıcı ekle</Button>
+    </PageActions>}
+    {!draft && !confirmation && error && <div className="page-error error" role="alert">{error}</div>}
+    <UsersPage users={users} currentUser={currentUser} search={search} busy={busy}
+      canUpdate={canUpdate} canDelete={canDelete}
+      onSearch={setSearch}
+      onEdit={person => {setError(''); setDraft(person);}}
+      onDelete={person => {setError(''); setConfirmation({
+        title: 'Kullanıcıyı sil',
+        description: `${person.name} ${person.surname} hesabı silinecek.`,
+        confirmLabel: 'sil', destructive: true,
+        action: () => run(async () => setUsers(await api<User[]>(`users/${person.id}`, 'DELETE'))),
+      });}}/>
+    <UserDialog draft={draft} busy={busy} error={error}
+      onClose={() => setDraft(null)}
+      onSubmit={(values, editing) => void run(async () => {
+        setUsers(await api<User[]>(editing ? `users/${editing.id}` : 'users', editing ? 'PATCH' : 'POST', values));
+        setDraft(null);
+      })}/>
+    <ConfirmDialog request={confirmation} busy={busy} error={error}
+      onClose={() => setConfirmation(null)} onDone={() => setConfirmation(null)}/>
+  </>;
 }

@@ -1,5 +1,11 @@
-import { Boxes, LockKeyhole, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Boxes, LockKeyhole, Pencil, Plus, Trash2 } from 'lucide-react';
+import { api } from '../api';
 import { Button } from '../components/ui';
+import { PageActions } from '../components/page-actions';
+import { ConfirmDialog, type Confirmation } from '../components/dialogs/confirm-dialog';
+import { GroupDialog, type GroupDraft } from '../components/dialogs/group-dialog';
+import { useAsync } from '../lib/use-async';
 import { fullName } from '../lib/format';
 import type { Group, Member } from '../lib/types';
 
@@ -18,7 +24,7 @@ const tags = (people: Member[], empty: string) =>
     {!people.length && <span className="permission-summary">{empty}</span>}
   </div>;
 
-export function GroupsPage({groups, busy, canUpdate, canDelete, onEdit, onDelete}: Props) {
+function GroupsPage({groups, busy, canUpdate, canDelete, onEdit, onDelete}: Props) {
   return <div className="permissions-panel">
     <div className="permissions-heading">
       <div className="permission-icon"><Boxes size={21}/></div>
@@ -48,4 +54,43 @@ export function GroupsPage({groups, busy, canUpdate, canDelete, onEdit, onDelete
       <LockKeyhole size={14}/> Bir kullanıcı istediğiniz kadar gruba eklenebilir; grup yöneticileri üyelerin task’larını panoda geri alabilir.
     </div>
   </div>;
+}
+
+/** Gruplar ekranı: liste, aday kişiler, ekleme/düzenleme ve silme onayı. */
+export function GroupsView({canCreate, canUpdate, canDelete}: {canCreate: boolean; canUpdate: boolean; canDelete: boolean}) {
+  const {busy, error, setError, run} = useAsync();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [candidates, setCandidates] = useState<Member[]>([]);
+  const [draft, setDraft] = useState<GroupDraft | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  useEffect(() => {
+    void run(async () => {
+      const [list, pool] = await Promise.all([api<Group[]>('groups'), api<Member[]>('groups/members')]);
+      setGroups(list);
+      setCandidates(pool);
+    });
+  }, []);
+
+  return <>
+    {canCreate && <PageActions>
+      <Button onClick={() => {setError(''); setDraft('new');}}><Plus size={17}/> Grup ekle</Button>
+    </PageActions>}
+    {!draft && !confirmation && error && <div className="page-error error" role="alert">{error}</div>}
+    <GroupsPage groups={groups} busy={busy} canUpdate={canUpdate} canDelete={canDelete}
+      onEdit={group => {setError(''); setDraft(group);}}
+      onDelete={group => {setError(''); setConfirmation({
+        title: 'Grubu sil',
+        description: `${group.name} grubu silinecek; üyelikler ve yöneticilikler kaldırılacak.`,
+        confirmLabel: 'sil', destructive: true,
+        action: () => run(async () => setGroups(await api<Group[]>(`groups/${group.id}`, 'DELETE'))),
+      });}}/>
+    <GroupDialog draft={draft} candidates={candidates} busy={busy} error={error}
+      onClose={() => setDraft(null)}
+      onSubmit={(values, editing) => void run(async () => {
+        setGroups(await api<Group[]>(editing ? `groups/${editing.id}` : 'groups', editing ? 'PATCH' : 'POST', values));
+        setDraft(null);
+      })}/>
+    <ConfirmDialog request={confirmation} busy={busy} error={error}
+      onClose={() => setConfirmation(null)} onDone={() => setConfirmation(null)}/>
+  </>;
 }

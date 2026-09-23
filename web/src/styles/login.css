@@ -136,56 +136,8 @@
 
 .login-form .muted { font-size: 13px; }
 
-/* Rol seçimi: arkadaki beyaz hap seçili sekmeye kayar. */
-.login-tabs {
-  position: relative;
-  display: flex;
-  margin: 28px 0;
-  padding: 4px;
-  border: 1px solid #eeeeee;
-  border-radius: 9px;
-  background: #f4f4f4;
-}
-
-.login-tabs-pill {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: 0 1px 5px #2b253613;
-  transition: transform .3s cubic-bezier(.4, 0, .2, 1);
-}
-
-.login-tabs button {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 50%;
-  padding: 9px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #7e7e7e;
-  font-size: 12px;
-  font-weight: 550;
-  transition: color .25s ease;
-}
-
-.login-tabs button[aria-pressed="true"] { color: #6a1bf7; }
-.login-tabs button > svg { transition: transform .3s cubic-bezier(.4, 0, .2, 1); }
-.login-tabs button[aria-pressed="true"] > svg { transform: scale(1.12); }
-
-@media (prefers-reduced-motion: reduce) {
-  .login-tabs-pill,
-  .login-tabs button,
-  .login-tabs button > svg { transition: none; }
-}
+/* Başlık ile form arası; rol seçimi kaldırıldığında boşluk forma geçti. */
+.login-form form { margin-top: 28px; }
 
 .login-note {
   display: flex;

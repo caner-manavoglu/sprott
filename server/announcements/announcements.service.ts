@@ -1,11 +1,10 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Response } from 'express';
 import { basename } from 'node:path';
-import { current, type AuthRequest } from '../common/auth.ts';
-import { idField, textField, type User } from '../common/fields.ts';
+import { can, textField, type User } from '../common/fields.ts';
 import { PrismaService } from '../prisma/prisma.service.ts';
-import { sql } from '../prisma/sql.ts';
-import { WorkspaceService } from '../workspace/workspace.service.ts';
+import { query } from '../prisma/sql.ts';
+import { NotifierService } from '../workspace/notifier.service.ts';
 import { type CreateAnnouncementDto, type UpdateAnnouncementDto } from './dto/announcements.dto.ts';
 
 type Upload = { originalname: string; mimetype: string; size: number; buffer: Buffer };
@@ -14,15 +13,30 @@ const person = (alias: string, extra = '') =>
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(@Inject(WorkspaceService) private workspace: WorkspaceService, @Inject(PrismaService) private prisma: PrismaService) { }
+  constructor(@Inject(NotifierService) private notifier: NotifierService, @Inject(PrismaService) private prisma: PrismaService) { }
+  /** Kişinin yöneticisi olduğu grupların kimlikleri; duyuru hedefi ve yetki kontrolü buradan çıkar. */
+  private async managedGroupIds(userId: number) {
+    return (await this.prisma.groupManager.findMany({ where: { userId }, select: { groupId: true }, orderBy: { groupId: 'asc' } })).map(row => row.groupId);
+  }
+  /**
+   * Duyuru oluşturabilir mi: yöneticiler her zaman, personel ise hem `announcement.create`
+   * yetkisine hem de en az bir grubun yöneticiliğine sahipse. Yetki grup yöneticiliğinden
+   * türediği için gruptan çıkarılan kişi duyuru oluşturamaz hale gelir.
+   */
+  private async assertCanAnnounce(user: User) {
+    if (user.role === 'admin') return;
+    if (!can(user, 'announcement.create') || !(await this.prisma.groupManager.count({ where: { userId: user.id } }))) {
+      throw new ForbiddenException('Duyuru oluşturma yetkiniz bulunmuyor.');
+    }
+  }
   private static readonly VISIBLE = `(
     $2::boolean OR a."createdBy" = $1
     OR NOT EXISTS (SELECT 1 FROM announcement_groups ag WHERE ag."announcementId" = a.id)
     OR EXISTS (SELECT 1 FROM announcement_groups ag JOIN group_members m ON m."groupId" = ag."groupId"
                WHERE ag."announcementId" = a.id AND m."userId" = $1)
   )`;
-  private async list(user: User, announcementId?: number) {
-    return (await sql(this.prisma, `
+  private list(user: User, announcementId?: number) {
+    return query(this.prisma, `
       SELECT a.id, a.title, a.body, a.mandatory, a."createdAt",
         (a."imageContent" IS NOT NULL) AS "hasImage",
         CASE WHEN au.id IS NULL THEN NULL ELSE ${person('au')} END AS author,
@@ -35,29 +49,22 @@ export class AnnouncementsService {
       LEFT JOIN announcement_reads r ON r."announcementId" = a.id AND r."userId" = $1
       WHERE ${AnnouncementsService.VISIBLE} AND ($3::int IS NULL OR a.id = $3)
       ORDER BY a."createdAt" DESC, a.id DESC`,
-      [user.id, user.role === 'admin', announcementId ?? null])).rows;
+      [user.id, user.role === 'admin', announcementId ?? null]);
   }
   private async manageable(user: User, announcementId: number) {
-    const row = (await this.prisma.announcement.findFirst({ where: { id: announcementId }, select: { createdBy: true, mandatory: true }, })) as { createdBy: number | null; mandatory: boolean } | undefined;
+    const row = await this.prisma.announcement.findUnique({ where: { id: announcementId }, select: { createdBy: true, mandatory: true } });
     if (!row) throw new NotFoundException('Duyuru bulunamadı.');
     if (user.role !== 'admin' && row.createdBy !== user.id) throw new ForbiddenException('Bu duyuru sizin değil.');
     return row;
   }
-  private async targetGroups(user: User, value: unknown) {
-    let raw = value;
-    if (typeof raw === 'string' && raw.trim()) {
-      try { raw = JSON.parse(raw); } catch { throw new BadRequestException('Hedef grup listesi geçersiz.'); }
-    }
-    if (raw === '' || raw === undefined || raw === null) raw = [];
-    if (!Array.isArray(raw)) throw new BadRequestException('Hedef grup listesi geçersiz.');
-    const ids = [...new Set(raw.map(idField))];
+  private async targetGroups(user: User, ids: number[]) {
     if (user.role === 'admin') {
       if (ids.length && (await this.prisma.group.count({ where: { id: { in: ids } }, })) !== ids.length) {
         throw new BadRequestException('Seçilen gruplardan biri bulunamadı.');
       }
       return ids;
     }
-    const managed = await this.workspace.managedGroupIds(user.id);
+    const managed = await this.managedGroupIds(user.id);
     if (!managed.length) throw new ForbiddenException('Duyuru oluşturmak için grup yöneticisi olmalısınız.');
     if (!ids.length) return managed;
     const outside = ids.filter(groupId => !managed.includes(groupId));
@@ -74,12 +81,11 @@ export class AnnouncementsService {
       content: new Uint8Array(file.buffer),
     };
   }
-  index(req: AuthRequest) { return this.list(current(req)); }
-  async pending(req: AuthRequest) {
-    const user = current(req);
+  index(user: User) { return this.list(user); }
+  pending(user: User) {
     // Yönetici yalnızca gerçekten kendisini hedefleyen duyuruların modalını görür;
     // denetim için listede görünen diğer grupların duyuruları burada elenir.
-    return (await sql(this.prisma, `
+    return query(this.prisma, `
       SELECT a.id, a.title, a.body, a.mandatory, a."createdAt",
         (a."imageContent" IS NOT NULL) AS "hasImage",
         CASE WHEN au.id IS NULL THEN NULL ELSE ${person('au')} END AS author,
@@ -93,36 +99,30 @@ export class AnnouncementsService {
         AND (NOT EXISTS (SELECT 1 FROM announcement_groups ag WHERE ag."announcementId" = a.id)
              OR EXISTS (SELECT 1 FROM announcement_groups ag JOIN group_members m ON m."groupId" = ag."groupId"
                         WHERE ag."announcementId" = a.id AND m."userId" = $1))
-      ORDER BY a."createdAt", a.id`, [user.id])).rows;
+      ORDER BY a."createdAt", a.id`, [user.id]);
   }
-  async audience(req: AuthRequest) {
-    const user = current(req);
-    if (!await this.workspace.canAnnounce(user)) throw new ForbiddenException('Duyuru oluşturma yetkiniz bulunmuyor.');
-    if (user.role === 'admin') return (await this.prisma.group.findMany({ select: { id: true, name: true }, orderBy: [{ name: 'asc' }], }));
-    return (await sql(this.prisma,
-      'SELECT g.id, g.name FROM group_managers m JOIN groups g ON g.id=m."groupId" WHERE m."userId"=$1 ORDER BY g.name', [user.id],
-    )).rows;
+  async audience(user: User) {
+    await this.assertCanAnnounce(user);
+    return this.prisma.group.findMany({
+      where: user.role === 'admin' ? {} : { managers: { some: { userId: user.id } } },
+      select: { id: true, name: true }, orderBy: { name: 'asc' },
+    });
   }
-  async create(req: AuthRequest, body: CreateAnnouncementDto, upload?: Upload) {
-    const user = current(req);
-    if (!await this.workspace.canAnnounce(user)) throw new ForbiddenException('Duyuru oluşturma yetkiniz bulunmuyor.');
-    const title = textField(body.title, 'Duyuru başlığı', 160), text = textField(body.body, 'Duyuru açıklaması', 5000);
-    // multipart alanları metin gelir; onay kutusu 'true' dizesine dönüşür.
-    const mandatory = body.mandatory === true || body.mandatory === 'true';
+  async create(user: User, body: CreateAnnouncementDto, upload?: Upload) {
+    await this.assertCanAnnounce(user);
     const groupIds = await this.targetGroups(user, body.groupIds);
     const image = this.image(upload);
-    const announcementId = await this.workspace.transaction(async client => {
-      const created = (await client.announcement.create({ data: { title, body: text, mandatory, imageName: image?.name ?? null, imageMimeType: image?.mimeType ?? null, imageSize: image?.size ?? null, imageContent: image ? new Uint8Array(image.content) : null, createdBy: user.id }, select: { id: true } })).id as number;
+    const announcementId = await this.prisma.$transaction(async client => {
+      const created = (await client.announcement.create({ data: { title: body.title, body: body.body, mandatory: body.mandatory ?? false, imageName: image?.name ?? null, imageMimeType: image?.mimeType ?? null, imageSize: image?.size ?? null, imageContent: image ? new Uint8Array(image.content) : null, createdBy: user.id }, select: { id: true } })).id;
       if (groupIds.length) {
         await client.announcementGroup.createMany({ data: groupIds.map(groupId => ({ announcementId: created, groupId })) });
       }
       return created;
     });
-    await this.workspace.notifyAnnouncement(await this.workspace.announcementAudience(announcementId), announcementId, user.id);
+    await this.notifier.notifyAnnouncement(announcementId, user.id);
     return this.list(user);
   }
-  async update(req: AuthRequest, id: string, body: UpdateAnnouncementDto, upload?: Upload) {
-    const user = current(req), announcementId = idField(id);
+  async update(user: User, announcementId: number, body: UpdateAnnouncementDto, upload?: Upload) {
     const existing = await this.manageable(user, announcementId);
     /*
      * Zorunlu duyuru, kişilerin "okudum" onayıyla kayıt altına alınır. Metni sonradan
@@ -130,15 +130,14 @@ export class AnnouncementsService {
      * değişiklik gerekiyorsa duyuru silinip yeniden yayımlanır.
      */
     if (existing.mandatory) throw new ForbiddenException('Zorunlu duyurular düzenlenemez. Gerekiyorsa silip yeniden yayımlayın.');
-    const title = textField(body.title, 'Duyuru başlığı', 160), text = textField(body.body, 'Duyuru açıklaması', 5000);
     const groupIds = await this.targetGroups(user, body.groupIds);
     const image = this.image(upload);
     // Görsel yalnızca yenisi yüklendiğinde ya da açıkça kaldırıldığında değişir.
-    const clearImage = body.removeImage === true || body.removeImage === 'true';
-    await this.workspace.transaction(async client => {
+    const clearImage = body.removeImage === true;
+    await this.prisma.$transaction(async client => {
       await client.announcement.update({
         where: { id: announcementId }, data: {
-          title, body: text,
+          title: body.title, body: body.body,
           ...(image || clearImage ? {
             imageName: image?.name ?? null, imageMimeType: image?.mimeType ?? null,
             imageSize: image?.size ?? null, imageContent: image ? new Uint8Array(image.content) : null
@@ -151,19 +150,17 @@ export class AnnouncementsService {
       }
     });
     // Hedef kitle genişlediyse yeni kişilere bildirim düşer; bildirimi olanlar iki kez uyarılmaz.
-    await this.workspace.notifyAnnouncement(await this.workspace.announcementAudience(announcementId), announcementId, user.id);
+    await this.notifier.notifyAnnouncement(announcementId, user.id);
     return this.list(user);
   }
-  async read(req: AuthRequest, id: string) {
-    const user = current(req), announcementId = idField(id);
+  async read(user: User, announcementId: number) {
     const [announcement] = await this.list(user, announcementId);
     if (!announcement) throw new NotFoundException('Duyuru bulunamadı.');
     if (!announcement.mandatory) throw new BadRequestException('Yalnızca zorunlu duyurularda okundu takibi yapılır.');
-    await this.workspace.readAnnouncement(user.id, announcementId);
+    await this.notifier.readAnnouncement(user.id, announcementId);
     return this.list(user);
   }
-  async picture(req: AuthRequest, id: string, response: Response) {
-    const user = current(req), announcementId = idField(id);
+  async picture(user: User, announcementId: number, response: Response) {
     if (!(await this.list(user, announcementId)).length) throw new NotFoundException('Duyuru bulunamadı.');
     const file = (await this.prisma.announcement.findFirst({ where: { id: announcementId, imageContent: { not: null } }, select: { imageName: true, imageMimeType: true, imageContent: true }, }));
     if (!file) throw new NotFoundException('Duyurunun görseli yok.');
@@ -172,29 +169,27 @@ export class AnnouncementsService {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.send(Buffer.from(file.imageContent!));
   }
-  async detail(req: AuthRequest, id: string) {
-    const user = current(req), announcementId = idField(id);
+  async detail(user: User, announcementId: number) {
     // Okuma raporu zorunlu duyurunun onay kaydıdır; diğer duyurularda okundu tutulmaz.
     if (!(await this.manageable(user, announcementId)).mandatory) {
       throw new BadRequestException('Okuma raporu yalnızca zorunlu duyurular için tutulur.');
     }
     const [announcement] = await this.list(user, announcementId);
-    const audience = await this.workspace.announcementAudience(announcementId);
-    const readers = (await sql(this.prisma, `
+    const audience = await this.notifier.announcementAudience(announcementId);
+    const readers = (await query(this.prisma, `
       SELECT ${person('u', `, 'readAt', r."readAt"`)} AS row
       FROM announcement_reads r JOIN users u ON u.id = r."userId"
       WHERE r."announcementId" = $1 AND u.id = ANY($2)
-      ORDER BY r."readAt" DESC`, [announcementId, audience])).rows.map(row => row.row);
-    const pending = (await sql(this.prisma, `
+      ORDER BY r."readAt" DESC`, [announcementId, audience])).map(row => row.row);
+    const pending = (await query(this.prisma, `
       SELECT ${person('u')} AS row FROM users u
       WHERE u.id = ANY($2) AND NOT EXISTS (SELECT 1 FROM announcement_reads r WHERE r."announcementId" = $1 AND r."userId" = u.id)
-      ORDER BY u.name, u.surname`, [announcementId, audience])).rows.map(row => row.row);
+      ORDER BY u.name, u.surname`, [announcementId, audience])).map(row => row.row);
     return { announcement, readers, pending };
   }
-  async remove(req: AuthRequest, id: string) {
-    const user = current(req), announcementId = idField(id);
+  async remove(user: User, announcementId: number) {
     await this.manageable(user, announcementId);
-    await this.prisma.announcement.deleteMany({ where: { id: announcementId }, });
+    await this.prisma.announcement.deleteMany({ where: { id: announcementId } });
     return this.list(user);
   }
 }

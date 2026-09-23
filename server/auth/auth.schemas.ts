@@ -2,10 +2,9 @@ import type { SchemaObject } from '@nestjs/swagger';
 import { userSchema } from '../common/schemas.ts';
 
 export const loginSchema: SchemaObject = {
-  type: 'object', required: ['email', 'password', 'role'], properties: {
+  type: 'object', required: ['email', 'password'], properties: {
     email: {type: 'string', format: 'email', maxLength: 254, example: 'admin@sprott.local'},
     password: {type: 'string', format: 'password', maxLength: 256, writeOnly: true},
-    role: {type: 'string', enum: ['admin', 'user'], example: 'admin'},
   },
 };
 export const sessionSchema: SchemaObject = {

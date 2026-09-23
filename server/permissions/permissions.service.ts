@@ -1,40 +1,31 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { admin, permissionLabels, type AuthRequest } from '../common/auth.ts';
-import { idField, MANAGED_GROUPS, PERMISSIONS, type Permission } from '../common/fields.ts';
+import { admin, permissionLabels } from '../common/auth.ts';
+import { MANAGED_GROUPS, PERMISSIONS, type User } from '../common/fields.ts';
 import { PrismaService } from '../prisma/prisma.service.ts';
-import { sql } from '../prisma/sql.ts';
-import { WorkspaceService } from '../workspace/workspace.service.ts';
+import { query } from '../prisma/sql.ts';
 import { type UpdatePermissionsDto } from './dto/permissions.dto.ts';
 
 @Injectable()
 export class PermissionsService {
-  constructor(@Inject(WorkspaceService) private workspace: WorkspaceService, @Inject(PrismaService) private prisma: PrismaService) { }
-  async list(req: AuthRequest) {
-    admin(req);
+  constructor(@Inject(PrismaService) private prisma: PrismaService) { }
+  list(user: User) {
+    admin(user);
     // Yönettiği gruplar, grup raporu yetkisinin kime gösterileceğini belirler.
-    return (await sql(this.prisma, `
+    return query(this.prisma, `
       SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions,(u."avatarContent" IS NOT NULL) AS "hasAvatar",
         ${MANAGED_GROUPS} AS "managedGroups"
-      FROM users u ORDER BY u.id`)).rows;
+      FROM users u ORDER BY u.id`);
   }
-  definitions(req: AuthRequest) { admin(req); return PERMISSIONS.map(key => ({ key, label: permissionLabels[key] })); }
-  async update(req: AuthRequest, id: string, body: UpdatePermissionsDto) {
-    admin(req);
-    const given = body.permissions;
-    if (!given || typeof given !== 'object' || Array.isArray(given)) throw new BadRequestException('Yetki listesi geçersiz.');
-    // Yalnızca açık yetkiler saklanır; tanımsız anahtar kabul edilmez.
-    const permissions: Record<string, boolean> = {};
-    for (const [key, value] of Object.entries(given)) {
-      if (!PERMISSIONS.includes(key as Permission)) throw new BadRequestException(`Tanımsız yetki: ${key}`);
-      if (typeof value !== 'boolean') throw new BadRequestException('Yetki değeri geçersiz.');
-      if (value) permissions[key] = true;
-    }
+  definitions(user: User) { admin(user); return PERMISSIONS.map(key => ({ key, label: permissionLabels[key] })); }
+  async update(user: User, id: number, body: UpdatePermissionsDto) {
+    admin(user);
+    // Yalnızca açık yetkiler saklanır; tanımsız anahtarı DTO reddeder.
+    const permissions = Object.fromEntries(Object.entries(body.permissions).filter(([, granted]) => granted));
     // Duyuru oluşturma yetkisi grup yöneticiliğinden türer; grup yönetmeyen kişiye verilemez.
-    if (permissions['announcement.create']
-      && !(await this.prisma.groupManager.count({ where: { userId: idField(id) }, }))) {
+    if (permissions['announcement.create'] && !(await this.prisma.groupManager.count({ where: { userId: id } }))) {
       throw new BadRequestException('Duyuru oluşturma yetkisi yalnızca grup yöneticilerine verilebilir.');
     }
-    if (!((await this.prisma.user.updateMany({ where: { id: idField(id), role: "user" }, data: { permissions } })).count)) throw new BadRequestException('Yalnızca personel yetkisi değiştirilebilir.');
-    return this.list(req);
+    if (!(await this.prisma.user.updateMany({ where: { id, role: 'user' }, data: { permissions } })).count) throw new BadRequestException('Yalnızca personel yetkisi değiştirilebilir.');
+    return this.list(user);
   }
 }

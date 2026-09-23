@@ -1,14 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { BadRequestException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
-import { current, digest, token, type AuthRequest } from '../common/auth.ts';
+import { bearer, digest } from '../common/auth.ts';
 import { can, type User } from '../common/fields.ts';
 import { PrismaService } from '../prisma/prisma.service.ts';
-import { sql } from '../prisma/sql.ts';
-import { WorkspaceService } from '../workspace/workspace.service.ts';
+import { query } from '../prisma/sql.ts';
 import { type IssueTokenDto } from './dto/mcp.dto.ts';
 
 const input = z.discriminatedUnion('operation', [
@@ -20,43 +19,40 @@ const input = z.discriminatedUnion('operation', [
 
 @Injectable()
 export class McpService {
-  constructor(@Inject(WorkspaceService) private workspace: WorkspaceService, @Inject(PrismaService) private prisma: PrismaService) { }
-  async status(req: AuthRequest) {
-    const user = current(req);
-    return (await sql(this.prisma, 'SELECT count(*)::int AS active FROM mcp_tokens WHERE "userId"=$1 AND expires>$2', [user.id, Date.now()])).rows[0];
+  constructor(@Inject(PrismaService) private prisma: PrismaService) { }
+  async status(user: User) {
+    return { active: await this.prisma.mcpToken.count({ where: { userId: user.id, expires: { gt: BigInt(Date.now()) } } }) };
   }
-  async connections(req: AuthRequest) {
-    return (await sql(this.prisma, 'SELECT id,name,"createdAt","lastUsedAt",expires::float8 AS expires FROM mcp_tokens WHERE "userId"=$1 ORDER BY id DESC', [current(req).id])).rows;
+  connections(user: User) {
+    return query(this.prisma, 'SELECT id,name,"createdAt","lastUsedAt",expires::float8 AS expires FROM mcp_tokens WHERE "userId"=$1 ORDER BY id DESC', [user.id]);
   }
-  async revokeOne(req: AuthRequest, id: string) {
-    if (!/^\d+$/.test(id)) throw new BadRequestException('Geçersiz bağlantı.');
-    if (!((await this.prisma.mcpToken.deleteMany({ where: { id: Number(id), userId: current(req).id }, })).count)) throw new NotFoundException('Bağlantı bulunamadı.');
+  async revokeOne(user: User, id: number) {
+    if (!(await this.prisma.mcpToken.deleteMany({ where: { id, userId: user.id } })).count) throw new NotFoundException('Bağlantı bulunamadı.');
     return { ok: true };
   }
-  async issue(req: AuthRequest, body: IssueTokenDto = {}) {
-    const user = current(req), value = randomBytes(32).toString('hex');
+  async issue(user: User, body: IssueTokenDto) {
+    const value = randomBytes(32).toString('hex');
     const expires = Date.now() + 30 * 24 * 60 * 60 * 1000;
-    const name = body?.name === undefined ? 'Yeni bağlantı' : body.name;
-    if (typeof name !== 'string' || !name.trim() || name.trim().length > 80) throw new BadRequestException('Bağlantı adı 1–80 karakter olmalı.');
-    const row = (await this.prisma.mcpToken.create({ data: { token: digest(value), userId: user.id, expires: BigInt(expires), name: name.trim() }, select: { id: true } }));
+    const row = await this.prisma.mcpToken.create({ data: { token: digest(value), userId: user.id, expires: BigInt(expires), name: body.name ?? 'Yeni bağlantı' }, select: { id: true } });
     return { id: row.id, token: value, expires };
   }
-  async revoke(req: AuthRequest) {
-    await this.prisma.mcpToken.deleteMany({ where: { userId: current(req).id }, });
+  async revoke(user: User) {
+    await this.prisma.mcpToken.deleteMany({ where: { userId: user.id } });
     return { ok: true };
   }
-  async execute(req: AuthRequest, body: unknown) {
+  async execute(req: Request, body: unknown) {
     const user = await this.authenticate(req);
     return this.perform(user, body);
   }
-  private async authenticate(req: AuthRequest) {
-    const user = (await sql(this.prisma, `SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions
-      FROM mcp_tokens k JOIN users u ON u.id=k."userId" WHERE k.token=$1 AND k.expires>$2`, [token(req), Date.now()])).rows[0] as User | undefined;
+  private async authenticate(req: Request) {
+    const key = bearer(req);
+    const user = key ? (await query<User>(this.prisma, `SELECT u.id,u.name,u.surname,u.title,u.email,u.role,u.permissions
+      FROM mcp_tokens k JOIN users u ON u.id=k."userId" WHERE k.token=$1 AND k.expires>$2`, [key, Date.now()]))[0] : undefined;
     if (!user) throw new UnauthorizedException('MCP bağlantısı geçersiz veya süresi dolmuş.');
-    await this.prisma.mcpToken.updateMany({ where: { token: token(req) }, data: { lastUsedAt: new Date() } });
+    await this.prisma.mcpToken.updateMany({ where: { token: key }, data: { lastUsedAt: new Date() } });
     return user;
   }
-  async http(req: AuthRequest, res: Response, body: unknown) {
+  async http(req: Request, res: Response, body: unknown) {
     const hosts = process.env.APP_ORIGIN ? [new URL(process.env.APP_ORIGIN).hostname] : ['localhost', '127.0.0.1', '[::1]'];
     if (!hosts.includes(req.hostname)) throw new ForbiddenException('Host reddedildi.');
     const origin = req.headers.origin;
@@ -84,18 +80,18 @@ export class McpService {
     const parsed = input.safeParse(body);
     if (!parsed.success) throw new BadRequestException('Geçersiz MCP işlemi veya alanları.');
     const args = parsed.data;
-    return this.workspace.transaction(async client => {
+    return this.prisma.$transaction(async client => {
       // Atama ve statü aynı transaction içinde kilitlenir; eşzamanlı atama değişimi erişimi genişletemez.
-      const tasks = (await sql(client, `SELECT t.id,t.title,t.description,t.type,t.priority,t."columnId",t."startDate",t."dueDate",
+      const tasks = await query(client, `SELECT t.id,t.title,t.description,t.type,t.priority,t."columnId",t."startDate",t."dueDate",
         c."projectId",p.name AS "projectName",c.name AS "columnName" FROM tasks t JOIN columns c ON c.id=t."columnId" JOIN projects p ON p.id=c."projectId"
         WHERE t."assigneeId"=$1 AND ($2::int IS NULL OR t.id=$2)
         AND EXISTS(SELECT 1 FROM project_members m WHERE m."projectId"=c."projectId" AND m."userId"=$1)
-        ORDER BY t.id FOR UPDATE OF t`, [user.id, 'taskId' in args ? args.taskId : null])).rows;
+        ORDER BY t.id FOR UPDATE OF t`, [user.id, 'taskId' in args ? args.taskId : null]);
       if (args.operation === 'list_my_tasks') return tasks;
       const task = tasks[0];
       if (!task) throw new NotFoundException('Size atanmış task bulunamadı.');
       if (args.operation === 'get_task') return task;
-      const project = (await sql(client, 'SELECT "completedAt" FROM projects WHERE id=$1 FOR SHARE', [task.projectId])).rows[0];
+      const project = (await query(client, 'SELECT "completedAt" FROM projects WHERE id=$1 FOR SHARE', [task.projectId]))[0];
       const columns = (await client.column.findMany({ where: { projectId: task.projectId }, select: { id: true, name: true }, orderBy: [{ position: 'asc' }, { id: 'asc' }], }));
       const transitions = (await client.workflowTransition.findMany({ where: { projectId: task.projectId }, select: { fromColumnId: true, toColumnId: true }, }));
       const allowed = !can(user, 'task.update') || project.completedAt ? [] : columns.filter(c => c.id !== task.columnId &&

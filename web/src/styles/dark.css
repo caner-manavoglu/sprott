@@ -3,14 +3,13 @@
    Sıra önemlidir: aşağıdaki kurallar yukarıdakileri bilinçli olarak ezer. */
 
 /* Yüzeyler. */
-:root[data-theme="dark"] :is(.sidebar, .kanban-column, .login-tabs, th) { background: #1a1522; }
+:root[data-theme="dark"] :is(.sidebar, .kanban-column, th) { background: #1a1522; }
 
 :root[data-theme="dark"] :is(.workspace, .task-card) {
   background: var(--surface);
   color: var(--foreground);
 }
 
-:root[data-theme="dark"] .login-tabs-pill { background: var(--surface); }
 
 :root[data-theme="dark"] :is(.workspace-icon, .user-avatar, .task-total, .column-count,
   .card-footer > span, .empty-column > div, .person-role, .report-total) {
@@ -32,7 +31,7 @@
 }
 
 /* İkincil yazılar. */
-:root[data-theme="dark"] :is(.muted, .eyebrow, .login-note, .login-tabs button, .workspace small,
+:root[data-theme="dark"] :is(.muted, .eyebrow, .login-note, .workspace small,
   .nav-label, .sidebar nav button, .user-info small, .topbar > div, .topbar > div span, .role-pill,
   .board-hint, .column-header > button, .task-code, .task-card > p, .card-footer, .empty-column,
   .empty-column strong, .add-task, .board-footer, .task-detail .reveal p, .permissions-heading p,
@@ -50,7 +49,7 @@
 :root[data-theme="dark"] :is(input, textarea)::placeholder { color: #969696; }
 
 /* Vurgular. */
-:root[data-theme="dark"] :is(.view-tab, .login-tabs button[aria-pressed="true"]) {
+:root[data-theme="dark"] .view-tab {
   color: var(--green);
   border-color: var(--green);
 }

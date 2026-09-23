@@ -6,4 +6,3 @@ export type CreateAnnouncementDto = z.infer<typeof createAnnouncementSchema>;
 
 export const updateAnnouncementSchema = createAnnouncementSchema.omit({ mandatory: true }).extend({ removeImage: formBoolean });
 export type UpdateAnnouncementDto = z.infer<typeof updateAnnouncementSchema>;
-

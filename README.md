@@ -33,8 +33,12 @@ prisma/
   migrations/0_init/migration.sql
 server/
   prisma/                       # PrismaService ve paylaşılan bağlantı
-  common/                       # DTO pipe, doğrulama ve oturum yardımcıları
-  workspace/                    # Ortak erişim, pano, bildirim ve günlük işlemleri
+  common/                       # DTO pipe/şemaları, CurrentUser, ParseId, oturum çerezi
+  workspace/
+    workspace.service.ts        # Oturum kullanıcısı, başlangıç verisi, pano ve gecikme sorguları
+    access.service.ts           # Proje erişimi/yazma izni, görünür personel kapsamı
+    notifier.service.ts         # Bildirim yazma, duyuru hedef kitlesi ve okundu kaydı
+    activity-log.service.ts     # Salt eklenen etkinlik günlüğü
   tasks/
     dto/tasks.dto.ts            # CreateTaskDto, UpdateTaskDto, TaskCommentDto
     tasks.controller.ts         # HTTP rotaları, Swagger, DTO pipe
@@ -44,9 +48,15 @@ server/
   ...                           # Diğer modüller aynı controller/service düzeninde
 ```
 
-Prisma'da entity karşılığı `schema.prisma` modelleridir; ayrıca TypeORM entity sınıfları tutulmaz. Tipler `npm run db:generate` ile `server/generated/prisma` içine üretilir (Git'e eklenmez). DTO'lar mevcut Zod bağımlılığıyla tanımlanır; `DtoPipe` istekleri çalışma anında doğrular. `tsx` decorator metadata üretimine bağımlı olmamak için pipe ve injection açıkça bağlanmıştır.
+Prisma'da entity karşılığı `schema.prisma` modelleridir; ayrıca TypeORM entity sınıfları tutulmaz. Tipler `npm run db:generate` ile `server/generated/prisma` içine üretilir (Git'e eklenmez). DTO'lar mevcut Zod bağımlılığıyla tanımlanır; `DtoPipe` istekleri çalışma anında doğrular ve dönüştürür (kimlikler number, boş form alanları null, multipart metinleri boolean/dizi). Servisler gövdeyi yeniden doğrulamaz; yalnızca veriye bağlı iş kurallarını uygular. Controller'lar `@CurrentUser()` ile oturum kullanıcısını, `@Param('id', ParseId)` ile doğrulanmış kimliği servise geçirir; servisler Express isteği almaz. Yetki kontrolü (`allow`) serviste kalır, çünkü bazı kurallar veriye bakmadan bilinemez. `tsx` decorator metadata üretimine bağımlı olmamak için pipe ve injection açıkça bağlanmıştır.
 
-CRUD işlemleri Prisma model metotlarını kullanır. Çok tablolu raporlar, PostgreSQL JSON toplamaları, kilitler ve bazı atomik koşullu işlemler `server/prisma/sql.ts` üzerinden Prisma'nın parametreli SQL API'siyle çalışır. Kullanıcı verisi SQL metnine eklenmez. `pg`, Prisma'nın PostgreSQL sürücüsü ve test/migration yardımcıları için kalır; controller'lar veritabanına erişmez.
+CRUD işlemleri Prisma model metotlarını kullanır. Çok tablolu raporlar, PostgreSQL JSON toplamaları, kilitler ve bazı atomik koşullu işlemler `server/prisma/sql.ts` üzerinden Prisma'nın parametreli SQL API'siyle çalışır: satır döndüren sorgular `query()`, döndürmeyenler `execute()` ile. Kullanıcı verisi SQL metnine eklenmez. `pg`, Prisma'nın PostgreSQL sürücüsü ve test/migration yardımcıları için kalır; controller'lar veritabanına erişmez.
+
+### Oturum
+
+Tarayıcı oturumu `httpOnly`, `SameSite=Strict` bir çerezde (`sprott_session`) taşınır; üretimde (`NODE_ENV=production`) `Secure` bayrağı da eklenir. JavaScript token'ı görmez. Girişte rol seçilmez, rol hesaptan okunur. `POST /api/login` yanıtı Swagger ve betikler için token'ı da döndürür; bu istemciler `Authorization: Bearer` başlığını kullanır. MCP uçları yalnızca kendi bearer token'larını kabul eder.
+
+Pano yanıtı task yorumlarını içermez; task açıldığında `GET /api/tasks/:id/comments` ile yüklenir ve yorum işlemleri güncel yorum listesini döndürür. Canlı güncelleme (`/api/live`) pano değişikliklerini proje kimliğiyle yayar; başka projenin panosuna bakan istemci panosunu yeniden çekmez.
 
 ### Mevcut PostgreSQL veritabanını Prisma Migrate'e alma
 
@@ -60,7 +70,7 @@ npm run db:deploy
 
 Fark varsa baseline kaydetmeden önce farkı inceleyin. Bu adımlar mevcut kayıtları silmez; `db:baseline` yalnızca migration geçmişini başlatır ve bir kez çalıştırılır. Boş veritabanında baseline komutu kullanılmaz, yalnızca `db:deploy` çalıştırılır. Uygulama başlangıcında DDL çalıştırılmaz.
 
-Sonraki model değişikliklerinde geliştirme veritabanında `npm run db:migrate -- --name degisiklik_adi`, ardından `npm run db:generate` çalıştırın. Oluşan SQL'i inceleyip migration klasörünü Git'e ekleyin; dağıtımda `npm run db:deploy` kullanın. SQLite aktarımından önce boş hedefte `db:deploy` çalıştırın.
+Sonraki model değişikliklerinde geliştirme veritabanında `npm run db:migrate -- --name degisiklik_adi`, ardından `npm run db:generate` çalıştırın. Oluşan SQL'i inceleyip migration klasörünü Git'e ekleyin; dağıtımda `npm run db:deploy` kullanın.
 
 ## Modüller
 

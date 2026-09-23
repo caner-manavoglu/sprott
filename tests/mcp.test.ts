@@ -1,5 +1,5 @@
 import { installTestSchema } from './database.ts';
-import { sql } from '../server/prisma/sql.ts';
+import { execute, query } from '../server/prisma/sql.ts';
 import { PrismaService } from '../server/prisma/prisma.service.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,15 +33,15 @@ test('MCP E2E: own tasks only, strict tools, workflow, stale writes, permissions
     async function request(path: string, token = '', body?: unknown, method = 'POST') {
       return fetch(`${base}/api/${path}`, {method, headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}`}, body: body === undefined ? undefined : JSON.stringify(body)});
     }
-    const session = await (await request('login', '', {email: process.env.USER_EMAIL, password: process.env.USER_PASSWORD, role: 'user'})).json();
-    await sql(store.prisma, `UPDATE users SET permissions='{"task.view":true,"task.update":true}' WHERE id=2`);
+    const session = await (await request('login', '', {email: process.env.USER_EMAIL, password: process.env.USER_PASSWORD})).json();
+    await execute(store.prisma, `UPDATE users SET permissions='{"task.view":true,"task.update":true}' WHERE id=2`);
     const key = await (await request('mcp/token', session.token, {name: 'İş PC'})).json();
     assert.ok(key.token);
     assert.deepEqual(await (await request('mcp/token', session.token, undefined, 'GET')).json(), {active: 1});
     assert.equal((await request('mcp/token', key.token, undefined, 'GET')).status, 401);
-    const task = async (name: string, owner: number | null) => (await sql(store.prisma, 'INSERT INTO tasks(title,description,"columnId","createdBy","assigneeId") VALUES($1,$1,1,1,$2) RETURNING id', [name, owner])).rows[0].id;
+    const task = async (name: string, owner: number | null) => (await query(store.prisma, 'INSERT INTO tasks(title,description,"columnId","createdBy","assigneeId") VALUES($1,$1,1,1,$2) RETURNING id', [name, owner]))[0].id;
     const own = await task('Own task', 2), other = await task('Private task', 1), unassigned = await task('Unassigned', null);
-    await sql(store.prisma, 'INSERT INTO workflow_transitions VALUES(1,1,2),(1,2,3)');
+    await execute(store.prisma, 'INSERT INTO workflow_transitions VALUES(1,1,2),(1,2,3)');
     const endpoint = new URL(`${base}/api/mcp/http`);
     await client.connect(new StreamableHTTPClientTransport(endpoint, {requestInit: {headers: {Authorization: `Bearer ${key.token}`}}}));
     const secondKey = await (await request('mcp/token', session.token, {name: 'Ev PC'})).json();
@@ -128,24 +128,24 @@ test('MCP E2E: own tasks only, strict tools, workflow, stale writes, permissions
       assert.equal((await request(`tasks/${other}`, admin.token, {columnId: 2}, 'PATCH')).status, 200);
       await receive();
     } finally {liveAbort.abort();}
-    assert.equal((await sql(store.prisma, 'SELECT "columnId" FROM tasks WHERE id=$1',[own])).rows[0].columnId, 2);
-    assert.equal((await sql(store.prisma, 'SELECT count(*)::int AS count FROM activity_log WHERE "taskId"=$1',[own])).rows[0].count, 1);
+    assert.equal((await query(store.prisma, 'SELECT "columnId" FROM tasks WHERE id=$1',[own]))[0].columnId, 2);
+    assert.equal((await query(store.prisma, 'SELECT count(*)::int AS count FROM activity_log WHERE "taskId"=$1',[own]))[0].count, 1);
     await call('transition_task', {taskId: own, columnId: 3, expectedColumnId: 1}, true);
-    await sql(store.prisma, 'UPDATE projects SET "completedAt"=now() WHERE id=1');
+    await execute(store.prisma, 'UPDATE projects SET "completedAt"=now() WHERE id=1');
     await call('transition_task', {taskId: own, columnId: 3, expectedColumnId: 2}, true);
-    await sql(store.prisma, 'UPDATE projects SET "completedAt"=NULL WHERE id=1');
+    await execute(store.prisma, 'UPDATE projects SET "completedAt"=NULL WHERE id=1');
     await call('transition_task', {taskId: own, columnId: 3, expectedColumnId: 2});
-    assert.equal((await sql(store.prisma, 'SELECT "columnId" FROM tasks WHERE id=$1',[own])).rows[0].columnId, 3);
-    await sql(store.prisma, 'UPDATE tasks SET "columnId"=2 WHERE id=$1', [own]);
-    await sql(store.prisma, `UPDATE users SET permissions='{"task.view":true}' WHERE id=2`);
+    assert.equal((await query(store.prisma, 'SELECT "columnId" FROM tasks WHERE id=$1',[own]))[0].columnId, 3);
+    await execute(store.prisma, 'UPDATE tasks SET "columnId"=2 WHERE id=$1', [own]);
+    await execute(store.prisma, `UPDATE users SET permissions='{"task.view":true}' WHERE id=2`);
     await call('transition_task', {taskId: own, columnId: 3, expectedColumnId: 2}, true);
-    await sql(store.prisma, `UPDATE users SET role='admin' WHERE id=2`);
+    await execute(store.prisma, `UPDATE users SET role='admin' WHERE id=2`);
     await call('get_task', {taskId: other}, true);
     await call('transition_task', {taskId: own, columnId: 1, expectedColumnId: 2}, true);
     assert.equal((await request(`tasks/${own}/comments`, key.token, {body: 'No'})).status, 401);
-    await sql(store.prisma, 'UPDATE tasks SET "assigneeId"=1 WHERE id=$1', [own]);
+    await execute(store.prisma, 'UPDATE tasks SET "assigneeId"=1 WHERE id=$1', [own]);
     await call('get_task', {taskId: own}, true);
-    await sql(store.prisma, 'UPDATE mcp_tokens SET expires=0 WHERE id=$1', [key.id]);
+    await execute(store.prisma, 'UPDATE mcp_tokens SET expires=0 WHERE id=$1', [key.id]);
     await assert.rejects(client.listTools());
     const expiredList = await (await request('mcp/connections', session.token, undefined, 'GET')).json();
     assert.equal(expiredList[0].expires, 0);

@@ -1,5 +1,5 @@
 import { installTestSchema } from './database.ts';
-import { sql } from '../server/prisma/sql.ts';
+import { execute } from '../server/prisma/sql.ts';
 import { PrismaService } from '../server/prisma/prisma.service.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,10 +36,9 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
   }
   try {
     assert.equal((await request('projects/1/board')).status, 401);
-    assert.equal((await request('login','POST',{email:'admin@test.local',password:process.env.ADMIN_PASSWORD,role:'user'})).status,401);
-    assert.equal((await request('login','POST',{email:'admin@test.local',password:'wrong',role:'admin'})).status,401);
-    const administrator = await request('login','POST',{email:'admin@test.local',password:process.env.ADMIN_PASSWORD,role:'admin'});
-    const personnel = await request('login','POST',{email:'user@test.local',password:process.env.USER_PASSWORD,role:'user'});
+    assert.equal((await request('login','POST',{email:'admin@test.local',password:'wrong'})).status,401);
+    const administrator = await request('login','POST',{email:'admin@test.local',password:process.env.ADMIN_PASSWORD});
+    const personnel = await request('login','POST',{email:'user@test.local',password:process.env.USER_PASSWORD});
     assert.equal(administrator.status,201); assert.equal(personnel.status,201);
     const a = administrator.data.token, u = personnel.data.token;
     assert.match(a, /^[0-9a-f]{64}$/);
@@ -119,7 +118,7 @@ test('login, role boundaries, task permissions, columns, moves and persistence',
     assert.ok(document.data.paths['/api/login'].post.responses['201'].content['application/json'].schema.properties.token);
     assert.equal((await fetch(`${url}/api/docs/`)).status,200);
     // Two parallel deletions cannot remove the last column.
-    await sql(app.get(PrismaService), 'DELETE FROM tasks');
+    await execute(app.get(PrismaService), 'DELETE FROM tasks');
     await request('columns/3','DELETE',undefined,a);
     const deletes = await Promise.all([request('columns/1','DELETE',undefined,a),request('columns/2','DELETE',undefined,a)]);
     assert.deepEqual(deletes.map(result => result.status).sort(),[200,400]);

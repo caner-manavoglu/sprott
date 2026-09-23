@@ -1,4 +1,15 @@
 # Caddy aynı sunucuda çalışır; DNS sprott.dev kaydı bu sunucuyu göstermelidir.
 sprott.dev {
+    encode zstd gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        # index.html'deki tema betiği ve Swagger UI satır içi betik/stil kullanır; bu yüzden 'unsafe-inline' gerekir.
+        Content-Security-Policy "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        -Server
+    }
     reverse_proxy 127.0.0.1:3000
 }
